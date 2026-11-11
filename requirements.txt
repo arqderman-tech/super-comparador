@@ -1,0 +1,16 @@
+# SuperComparador - Dependencias de Python
+
+# Servidor Web y API
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.0.0
+
+# Cliente HTTP y Scraping
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+curl_cffi>=0.7.0
+pandas>=2.0.0
+
+# Automatización de Navegador (para scrapers con JS dinámico)
+playwright>=1.40.0
+playwright-stealth>=1.0.0

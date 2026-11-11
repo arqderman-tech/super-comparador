@@ -1,0 +1,61 @@
+# =======================================================
+# SuperComparador - .gitignore
+# Restricciones de tamaño de GitHub (máx 100MB por archivo)
+# =======================================================
+
+# Archivos de exportación grandes generados por scrapers
+lagallega_products.json
+lagallega_products.csv
+coto_promos.json
+promos_carrefour.json
+
+# Salidas de scrapers y datos temporales pesados
+output_carrefour/
+data/
+
+# Base de datos completa / backups locales pesados
+database_full.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.db.tmp
+*.bak*
+
+# Nota sobre database.db:
+# El archivo database.db incluido en el repo es una versión seed ligera (~15MB)
+# 100% funcional y dentro del límite seguro de GitHub (<50MB).
+# Si ejecutas scrapers masivos locales y tu base crece (>50MB),
+# ejecuta 'python export_seed.py' para regenerar la base seed antes de hacer commit.
+
+# Python y entornos virtuales
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Logs de scrapers
+*.log
+
+# Editores y entornos
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Conflictos y sincronización de OneDrive
+*-Administrator.*
+*-Administrador.*
+*-DESKTOP-*
+*.tmp
+~$*
+.DS_Store
+Thumbs.db
+desktop.ini
