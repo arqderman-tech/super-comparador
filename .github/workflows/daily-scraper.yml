@@ -1,0 +1,82 @@
+name: SuperComparador Daily Scraper & Cloud Sync
+
+on:
+  schedule:
+    # Ejecuta automáticamente todos los días a las 08:00 UTC (05:00 AM hora argentina)
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Permite ejecutar manualmente con un clic desde la web de GitHub
+
+# Permisos para actualizar el repositorio y publicar en GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  scrape-and-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 🐍 Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: 📈 Actualizar historial de precios de GALLEBOT
+        run: |
+          python update_history.py || echo "Aviso en update_history.py"
+
+      - name: 🛒 Ejecutar Scrapers de Supermercados
+        run: |
+          echo "Ejecutando relevamiento de precios multitienda..."
+          python scraper.py || echo "Aviso La Gallega"
+          python carrefour_scraper.py || echo "Aviso Carrefour Scraper"
+          python import_carrefour.py || echo "Aviso Import Carrefour"
+          python scraper_coto.py || echo "Aviso COTO"
+          python scraper_jumbo.py || echo "Aviso Jumbo"
+          python scraper_laanonima.py || echo "Aviso La Anónima"
+          python scraper_reina.py || echo "Aviso La Reina"
+
+      - name: 🗜️ Regenerar base seed optimizada (<30MB)
+        run: |
+          python export_seed.py
+
+      - name: 🌐 Generar datos estáticos para GitHub Pages
+        run: |
+          python export_static_data.py
+
+      - name: 💾 Guardar y comitear datos actualizados en el repositorio
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add database.db static/data/
+          git diff --staged --quiet || (git commit -m "chore(auto): actualización diaria de precios [skip ci]" && git push)
+
+      - name: 🚀 Configurar GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: 📦 Subir artefacto para GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './static'
+
+      - name: 🌍 Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

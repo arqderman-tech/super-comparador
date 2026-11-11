@@ -1,119 +1,105 @@
-# 🛒 SuperComparador Multitienda
+# 🛒 SuperComparador Multitienda (Cloud & Autónomo)
 
-Sistema integral de **comparación de precios en supermercados argentinos**, relevamiento automatizado mediante scrapers, auditoría de ofertas contra series históricas de precios y **escáner móvil de códigos de barra en góndola**.
+Sistema integral y **100% autónomo** de **comparación de precios en supermercados argentinos**, relevamiento automatizado mediante scrapers en la nube (GitHub Actions), auditoría de ofertas contra series históricas de 7 meses y **escáner móvil de códigos de barra en góndola**.
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-CDN-38B2AC)
-![SQLite](https://img.shields.io/badge/SQLite-FTS5-003B57)
-![GitHub Ready](https://img.shields.io/badge/GitHub-Size%20Optimized%20(<50MB)-brightgreen)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-Automated%20Daily%20Cron-2088FF)
+![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20PWA%20Ready-brightgreen)
+![SQLite FTS5](https://img.shields.io/badge/SQLite-FTS5%20Search-003B57)
+
+---
+
+## ⚡ ¿Cómo funciona la arquitectura 100% autónoma?
+
+Este repositorio está diseñado para funcionar **sin depender de que tu computadora esté encendida ni de configuraciones manuales locales**:
+
+```mermaid
+flowchart LR
+    A[⏰ GitHub Actions Diaria<br/>08:00 UTC] --> B[🕷️ Scrapers en la Nube<br/>Playwright + APIs]
+    B --> C[📈 Descarga Historial<br/>GALLEBOT 7 Meses]
+    C --> D[🗜️ Regenera Seed DB<br/>database.db <20MB]
+    D --> E[🌐 Exporta Datos Estáticos<br/>static/data/]
+    E --> F[💾 Auto-Commit al Repo<br/>GitHub Actions Bot]
+    F --> G[🌍 Despliegue en Vivo<br/>GitHub Pages]
+```
+
+1. **Relevamiento Programado en la Nube:** Un flujo de [GitHub Actions](.github/workflows/daily-scraper.yml) se ejecuta todos los días a las 05:00 AM (hora argentina) en los servidores de GitHub.
+2. **Ejecución de Scrapers:** Ejecuta los scrapers de **La Gallega, COTO, Carrefour, Jumbo, La Reina y La Anónima**, y descarga el histórico de precios consolidado.
+3. **Optimización de Tamaño (<50 MB):** Mantiene la base de datos `database.db` en ~15 MB y genera los índices estáticos en `static/data/`.
+4. **Auto-commit & Despliegue:** Guarda los datos actualizados en el repositorio y los publica automáticamente en **GitHub Pages**.
+5. **Acceso Móvil en Góndola:** Podés abrir la web desde tu celular con datos móviles (4G/5G) en cualquier supermercado, escanear códigos de barra con la cámara y ver la comparativa al instante.
 
 ---
 
 ## 🌟 Características Principales
 
-1. **📱 Escáner de Código de Barras en Góndola (Móvil & Cámara)**
-   - Diseñado específicamente para usarse desde el navegador del celular en la góndola del supermercado.
-   - Visor de cámara en vivo con retícula láser de escaneo, sonido de confirmación (*beep*) y vibración háptica.
-   - Controles de cámara: switch de cámara trasera/frontal y botón de linterna.
-   - **Modo Foto Directa (`capture="environment"`):** Permite escanear al instante incluso navegando por red local (`http://IP:8000`) sin restricciones de certificados SSL.
-   - Búsqueda manual por EAN con botones rápidos de prueba de productos reales.
+- **📱 Escáner de Código de Barras en Góndola:**
+  - Visor en vivo con animación láser, linterna y selector de cámaras.
+  - **Modo Foto Directa (`capture="environment"`):** Para capturar el código rápidamente sin restricciones de streaming de video.
+  - Alarma sonora (*beep*) y respuesta háptica (vibración) al detectar el código.
+  - Botones de prueba rápida con códigos reales (3D's Queso, Palitos Swift, Nescao, Rexona Cotton, Aceite Zuccardi).
 
-2. **⚖️ Comparador Multitienda en Tiempo Real**
-   - Compara precios idénticos y equivalentes entre **La Gallega, COTO, Carrefour, La Reina, Jumbo y La Anónima**.
-   - Identifica el **Mejor Precio** y calcula el **Ahorro Máximo** en pesos y porcentaje.
-   - Desglose de promociones complejas por unidad (*2x1*, *2da al 70%*, *3x2*, *4x3*, *descuento directo*).
+- **⚖️ Comparativa Multitienda en Tiempo Real:**
+  - Precios comparados entre **La Gallega, COTO, Carrefour, La Reina, Jumbo y La Anónima**.
+  - Identificación del mejor precio y cálculo del ahorro máximo.
+  - Desglose de promociones por unidad (*2x1*, *2da al 70%*, *3x2*, ofertas directas).
 
-3. **📈 Auditoría y Evolución Histórica de 7 Meses**
-   - Gráfico interactivo diario de evolución de precios (febrero a hoy).
-   - Detección algorítmica de **Oferta Real Verificada** vs **Oferta Inflada / Falsa Oferta** contrastando contra precios base previos.
-   - Métricas de inflación acumulada por producto, precio mínimo, máximo y promedio histórico.
+- **📈 Auditoría Histórica de 7 Meses:**
+  - Gráfico interactivo diario de evolución de precios (febrero a hoy).
+  - Detección algorítmica de **Oferta Real** vs **Oferta Inflada / Falsa Oferta**.
+  - Cálculo de porcentaje de inflación acumulada por artículo.
 
-4. **🧺 Canasta de Compras Multitienda**
-   - Añadí productos a tu carrito y compará el costo total consolidado entre distintas cadenas para saber dónde conviene hacer la compra completa.
-
----
-
-## 🚀 Inicio Rápido (Out of the Box)
-
-El repositorio incluye una base de datos ligera **`database.db` (~15 MB)** pre-cargada con **más de 800 productos reales**, precios multitienda y series históricas completas. El proyecto funciona inmediatamente sin necesidad de scrapear primero.
-
-### 1. Clonar e Instalar Dependencias
-
-```bash
-git clone https://github.com/TU_USUARIO/super-comparador.git
-cd super-comparador
-
-# Instalar dependencias
-pip install -r requirements.txt
-```
-
-### 2. Ejecutar la Aplicación
-
-**En Windows:**
-Hacé doble clic en [`run_app.bat`](run_app.bat) o ejecutá:
-
-```powershell
-python -X utf8 server.py
-```
-
-Abrí tu navegador en:
-- **En tu computadora:** [http://localhost:8000](http://localhost:8000)
-- **Desde tu celular en la misma red Wi-Fi:** `http://<IP-DE-TU-PC>:8000` *(por ejemplo: `http://192.168.1.50:8000`)*
+- **🧺 Canasta Inteligente:**
+  - Armá tu carrito y compará cuánto te costaría la compra total en cada supermercado.
 
 ---
 
-## 📦 Restricciones de Tamaño de GitHub & Gestión de Datos
+## 🚀 Despliegue en GitHub (1 solo paso)
 
-GitHub establece:
-- **Límite estricto:** 100 MB por archivo (rechaza el commit).
-- **Advertencia:** 50 MB por archivo.
+El repositorio local ya está inicializado y con el commit creado. Para publicarlo:
 
-La base de datos de producción completa con cientos de miles de productos supera los 350 MB. Para garantizar que este repositorio se mantenga **liviano, clone rápido y cumpla al 100% las políticas de GitHub**, se implementó la siguiente arquitectura:
-
-- **`database.db` (~15.9 MB):** Base de datos seed incluida en el repo con datos representativos de todas las categorías y cadenas, lista para usar.
-- **`.gitignore`:** Ignora archivos masivos generados por los scrapers (`output_carrefour/`, `data/`, `lagallega_products.json`, dumps temporales).
-- **`export_seed.py`:** Herramienta para regenerar o actualizar la base ligera `database.db` a partir de un scrape local completo antes de subir cambios a GitHub:
-  ```bash
-  python export_seed.py
-  ```
-- **`init_db.py`:** Permite inicializar una base de datos completamente vacía con la estructura y tablas FTS5 si se desea arrancar de cero:
-  ```bash
-  python init_db.py
-  ```
+1. Creá un repositorio vacío en [GitHub](https://github.com/new) llamado `super-comparador`.
+2. Ejecutá en tu consola:
+   ```powershell
+   cd "C:\Users\usuario\OneDrive - Depaoli Trosce\Aplicaciones\APLICACIONES FUNCIONALES\super-comparador-github"
+   git remote add origin https://github.com/arqderman-tech/super-comparador.git
+   git push -u origin main
+   ```
+3. **Activar GitHub Pages (opcional, automático con Actions):**
+   - En tu repo en GitHub ve a **Settings > Pages**.
+   - En **Build and deployment > Source**, seleccioná **GitHub Actions**.
+   - ¡Listo! Tu app estará activa en `https://arqderman-tech.github.io/super-comparador/`.
 
 ---
 
-## 🕷️ Scrapers de Supermercados
+## 💻 Ejecución Local (Opcional)
 
-El proyecto cuenta con scrapers especializados para cada supermercado:
+Si querés probar la aplicación en tu computadora localmente:
 
-| Supermercado | Script | Método |
-| :--- | :--- | :--- |
-| **La Gallega** | `scraper.py` | API / HTTP Directo |
-| **COTO** | `scraper_coto.py`, `coto_base.py` | Playwright / HTML Parsing |
-| **Carrefour** | `carrefour_scraper.py`, `import_carrefour.py` | API VTEX / CSV Pipeline |
-| **Jumbo** | `scraper_jumbo.py` | API VTEX / GraphQL |
-| **La Reina** | `scraper_reina.py` | Web Scraping / Catálogo |
-| **La Anónima** | `scraper_laanonima.py` | API VTEX |
-| **Historial** | `update_history.py` | Descarga de serie histórica diaria |
-
-### Actualización Automática Diaria
-Podés ejecutar todas las actualizaciones consolidadas con:
-```bat
-daily_update.bat
-```
+1. **Instalar dependencias:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. **Iniciar servidor:**
+   Hacé doble clic en [`run_app.bat`](run_app.bat) o ejecutá:
+   ```bash
+   python -X utf8 server.py
+   ```
+3. Abrí en tu navegador: [http://localhost:8000](http://localhost:8000)
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## ☁️ Despliegue del Backend Dinámico (Docker / Render)
 
-- **Backend:** FastAPI, Uvicorn, SQLite3 con FTS5 (Full Text Search).
-- **Frontend:** Vanilla JavaScript modular, Tailwind CSS (vía CDN), FontAwesome 6, Chart.js, HTML5-QRCode.
-- **Scraping:** Requests, Playwright, BeautifulSoup4, Curl-Cffi, Pandas.
+Si además querés tener el servidor FastAPI dinámico corriendo 24/7 en la nube:
+- Incluye [`Dockerfile`](Dockerfile) y [`render.yaml`](render.yaml).
+- Podés vincular tu repositorio en [Render.com](https://render.com) (Plan gratuito) para tener tu API y UI activas en un subdominio `.onrender.com`.
 
 ---
 
-## 📄 Licencia
+## 🛠️ Tecnologías
 
-Este proyecto se distribuye bajo la licencia MIT. Consultá el archivo para más información.
+- **Scraping en Nube:** GitHub Actions, Playwright, BeautifulSoup4, Requests, Curl-Cffi.
+- **Frontend Híbrido:** Vanilla JS, TailwindCSS, FontAwesome 6, Chart.js, HTML5-QRCode.
+- **Backend / Datos:** FastAPI, Uvicorn, SQLite3 (FTS5), JSON estáticos optimizados.

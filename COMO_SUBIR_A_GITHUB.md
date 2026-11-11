@@ -1,92 +1,54 @@
-# 🚀 Cómo subir este repositorio a GitHub - Guía Paso a Paso
+# 🚀 Cómo subir este repositorio a GitHub - Guía Simple y Rápida
 
-Esta guía te muestra cómo subir esta carpeta (`super-comparador-github`) a un repositorio nuevo en GitHub, respetando las restricciones de tamaño de archivo (<50MB).
-
----
-
-## Paso 1: Crear el repositorio en GitHub
-
-1. Entrá a [https://github.com](https://github.com) e iniciá sesión con tu cuenta.
-2. Hacé clic en el botón **"+"** (arriba a la derecha) y seleccioná **"New repository"**.
-3. Completá los campos:
-   - **Repository name:** `super-comparador` *(o el nombre que prefieras)*.
-   - **Description:** `Sistema multitienda de comparación de precios en supermercados con escáner de códigos de barra.`
-   - **Visibilidad:** `Public` o `Private` (a tu elección).
-   - ⚠️ **NO marques ninguna casilla** (NO marques *Add a README file*, NO marques *Add .gitignore*, NO marques *Choose a license* porque ya están todos incluidos y configurados en esta carpeta).
-4. Hacé clic en el botón verde **"Create repository"**.
+Todo el proyecto ya está preparado, configurado y listo para ser **100% autónomo en GitHub**. No necesitás instalar herramientas complejas ni configurar tareas programadas en tu computadora.
 
 ---
 
-## Paso 2: Abrir la terminal en esta carpeta
+## Paso 1: Crear el repositorio en tu cuenta de GitHub
 
-Abrí una ventana de PowerShell o Terminal en:
+1. Entrá a tu cuenta: [https://github.com/new](https://github.com/new)
+2. Completá:
+   - **Repository name:** `super-comparador`
+   - **Description:** `Sistema autónomo de comparación de precios en supermercados con escáner móvil de código de barras.`
+   - **Visibilidad:** `Public` (recomendado para usar GitHub Pages gratis) o `Private`.
+   - ⚠️ **NO marques ninguna casilla** (deja desmarcados *README*, *.gitignore* y *License* porque ya están creados y optimizados aquí).
+3. Hacé clic en el botón verde **"Create repository"**.
+
+---
+
+## Paso 2: Subir el código desde esta PC
+
+Abrí la consola de PowerShell y ejecutá:
 
 ```powershell
 cd "C:\Users\usuario\OneDrive - Depaoli Trosce\Aplicaciones\APLICACIONES FUNCIONALES\super-comparador-github"
-```
 
----
+# Vincular con tu repositorio de GitHub
+git remote add origin https://github.com/arqderman-tech/super-comparador.git
 
-## Paso 3: Inicializar Git y verificar archivos
-
-Ejecutá los siguientes comandos en orden:
-
-```bash
-# 1. Inicializar el repositorio Git local
-git init
-
-# 2. Agregar todos los archivos preparados
-git add .
-
-# 3. Verificar qué archivos se van a subir
-git status
-```
-
-> **Verificación de tamaño:**
-> Todo está configurado para que ningún archivo supere los 50 MB (`database.db` pesa ~15.9 MB y los archivos masivos de scrapers están excluidos en `.gitignore`).
-
----
-
-## Paso 4: Crear el primer commit
-
-```bash
-git commit -m "feat: SuperComparador multitienda con escáner de código de barras y base seed funcional"
-```
-
----
-
-## Paso 5: Conectar y subir a GitHub
-
-Reemplazá `TU_USUARIO` por tu nombre de usuario de GitHub:
-
-```bash
-# Cambiar la rama principal a main
+# Subir a la rama main
 git branch -M main
-
-# Conectar con tu repositorio remoto
-git remote add origin https://github.com/TU_USUARIO/super-comparador.git
-
-# Subir el código a GitHub
 git push -u origin main
 ```
 
-*(Si es la primera vez que usás Git en esta máquina, te pedirá autorizar tu cuenta de GitHub en el navegador o ingresar un Personal Access Token).*
+*(Si Git te pide autenticación en el navegador, autorizalo con tu cuenta `arqderman-tech`).*
 
 ---
 
-## 🔄 Futuras actualizaciones
+## Paso 3: Activar la Web Autónoma (GitHub Pages)
 
-Cada vez que hagas mejoras o agregues cambios:
+Para que puedas abrir el comparador y el escáner de código de barras directamente desde tu celular en cualquier supermercado:
 
-```bash
-git add .
-git commit -m "Descripción de los cambios"
-git push
-```
+1. En tu repositorio de GitHub, andá a la pestaña **Settings** (Configuración).
+2. En el menú lateral izquierdo, hacé clic en **Pages**.
+3. En la sección **Build and deployment > Source**, seleccioná **GitHub Actions**.
+4. ¡Listo! Tu sitio web estará activo en:
+   👉 **`https://arqderman-tech.github.io/super-comparador/`**
 
-> 💡 **Nota sobre scrapers y base de datos:**
-> Si corrés scrapers masivos que hagan crecer `database.db` a cientos de megabytes, antes de commitear ejecutá:
-> ```powershell
-> python export_seed.py
-> ```
-> Esto recreará la base ligera (~15 MB) con los datos más recientes para mantener el repositorio ágil y dentro de los límites de GitHub.
+---
+
+## 🤖 ¿Cómo funciona la automatización diaria?
+
+- **No necesitás hacer nada más:** Todos los días a las **05:00 AM** (hora argentina), el flujo de [GitHub Actions](.github/workflows/daily-scraper.yml) se ejecutará en los servidores de GitHub en la nube.
+- Relevará los precios de **La Gallega, COTO, Carrefour, Jumbo, La Reina y La Anónima**, actualizará los históricos, regenerará la base optimizada y actualizará la web automáticamente.
+- También podés forzar una actualización manual cuando quieras desde la pestaña **Actions > SuperComparador Daily Scraper & Cloud Sync > Run workflow**.

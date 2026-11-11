@@ -1994,6 +1994,187 @@
 
 
 
+    // ==============================================================
+    // HYBRID ADAPTER: FASTAPI (LOCAL) + STATIC FALLBACK (GITHUB PAGES)
+    // ==============================================================
+    const isGitHubPages = location.hostname.endsWith('github.io') || location.protocol === 'file:';
+    let staticCache = {
+      products: null,
+      byEan: null,
+      stats: null,
+      categories: null,
+      deals: null,
+      audit: null,
+      inflation: null
+    };
+
+    const originalFetch = window.fetch;
+    window.fetch = async function(url, options) {
+      const urlStr = typeof url === 'string' ? url : (url.url || '');
+      
+      // If it's not an API call, let it pass through
+      if (!urlStr.startsWith('/api/') && !urlStr.includes('/api/')) {
+        return originalFetch(url, options);
+      }
+
+      // If running locally, attempt real backend first
+      if (!isGitHubPages) {
+        try {
+          const resp = await originalFetch(url, options);
+          if (resp.ok || resp.status === 404 || resp.status === 400) {
+            return resp;
+          }
+        } catch(e) {
+          console.warn('Backend /api unreachable, activating static GitHub Pages fallback:', e);
+        }
+      }
+
+      // STATIC GITHUB PAGES FALLBACK LOGIC
+      try {
+        const parsed = new URL(urlStr, location.origin);
+        const path = parsed.pathname;
+        const params = parsed.searchParams;
+
+        // Path normalization for relative deployment on GitHub Pages
+        const dataPrefix = location.pathname.includes('/static/') ? 'data/' : (isGitHubPages ? 'data/' : '/data/');
+
+        // 1. Stats
+        if (path === '/api/stats') {
+          if (!staticCache.stats) {
+            const r = await originalFetch(dataPrefix + 'stats.json');
+            staticCache.stats = await r.json();
+          }
+          return new Response(JSON.stringify(staticCache.stats), { status: 200, headers: {'Content-Type': 'application/json'} });
+        }
+
+        // 2. Categories
+        if (path === '/api/categories') {
+          if (!staticCache.categories) {
+            const r = await originalFetch(dataPrefix + 'categories.json');
+            staticCache.categories = await r.json();
+          }
+          return new Response(JSON.stringify(staticCache.categories), { status: 200, headers: {'Content-Type': 'application/json'} });
+        }
+
+        // 3. Deals
+        if (path === '/api/deals' || path === '/api/top-deals') {
+          if (!staticCache.deals) {
+            const r = await originalFetch(dataPrefix + 'top_deals.json');
+            staticCache.deals = await r.json();
+          }
+          return new Response(JSON.stringify(staticCache.deals), { status: 200, headers: {'Content-Type': 'application/json'} });
+        }
+
+        // 4. Audit
+        if (path === '/api/history/audit') {
+          if (!staticCache.audit) {
+            const r = await originalFetch(dataPrefix + 'audit.json');
+            staticCache.audit = await r.json();
+          }
+          return new Response(JSON.stringify(staticCache.audit), { status: 200, headers: {'Content-Type': 'application/json'} });
+        }
+
+        // 5. Inflation
+        if (path === '/api/history/inflation') {
+          if (!staticCache.inflation) {
+            const r = await originalFetch(dataPrefix + 'inflation.json');
+            staticCache.inflation = await r.json();
+          }
+          return new Response(JSON.stringify(staticCache.inflation), { status: 200, headers: {'Content-Type': 'application/json'} });
+        }
+
+        // 6. Barcode Scanner lookup: /api/products/by-ean/{ean}
+        if (path.startsWith('/api/products/by-ean/')) {
+          const ean = decodeURIComponent(path.replace('/api/products/by-ean/', '')).trim();
+          if (!staticCache.byEan) {
+            const r = await originalFetch(dataPrefix + 'products_by_ean.json');
+            staticCache.byEan = await r.json();
+          }
+          const found = staticCache.byEan[ean] || staticCache.byEan[ean.replace(/^0+/, '')] || staticCache.byEan['0' + ean];
+          if (found) {
+            return new Response(JSON.stringify(found), { status: 200, headers: {'Content-Type': 'application/json'} });
+          } else {
+            return new Response(JSON.stringify({ detail: `No se encontró producto con código ${ean}` }), { status: 404, headers: {'Content-Type': 'application/json'} });
+          }
+        }
+
+        // 7. Product detail: /api/products/{id}
+        if (path.startsWith('/api/products/') && !path.includes('/history')) {
+          const id = decodeURIComponent(path.replace('/api/products/', '')).trim();
+          if (!staticCache.byEan) {
+            const r = await originalFetch(dataPrefix + 'products_by_ean.json');
+            staticCache.byEan = await r.json();
+          }
+          const found = staticCache.byEan[id];
+          if (found) {
+            return new Response(JSON.stringify(found), { status: 200, headers: {'Content-Type': 'application/json'} });
+          }
+          return new Response(JSON.stringify({ detail: 'Producto no encontrado' }), { status: 404, headers: {'Content-Type': 'application/json'} });
+        }
+
+        // 8. History: /api/products/{id}/history
+        if (path.includes('/history') && path.startsWith('/api/products/')) {
+          const parts = path.split('/');
+          const id = decodeURIComponent(parts[3] || '');
+          if (!staticCache.byEan) {
+            const r = await originalFetch(dataPrefix + 'products_by_ean.json');
+            staticCache.byEan = await r.json();
+          }
+          const prod = staticCache.byEan[id];
+          const hist = (prod && prod.history) ? prod.history : [];
+          const stats = (prod && prod.history_stats) ? prod.history_stats : {};
+          return new Response(JSON.stringify({ history: hist, stats: stats }), { status: 200, headers: {'Content-Type': 'application/json'} });
+        }
+
+        // 9. Catalog list: /api/products or /api/comparator/products
+        if (path === '/api/products' || path === '/api/comparator/products') {
+          if (!staticCache.products) {
+            const r = await originalFetch(dataPrefix + 'products.json');
+            staticCache.products = await r.json();
+          }
+          let items = [...staticCache.products];
+          const q = (params.get('query') || params.get('q') || '').toLowerCase().trim();
+          const cat = (params.get('category') || '').trim();
+          const promoOnly = params.get('promo') === 'true' || params.get('promo') === '1';
+          const page = parseInt(params.get('page') || '1') || 1;
+          const limit = parseInt(params.get('limit') || '40') || 40;
+
+          if (q) {
+            items = items.filter(p => (p.name || '').toLowerCase().includes(q) || (p.brand || '').toLowerCase().includes(q) || (p.ean || '').includes(q));
+          }
+          if (cat) {
+            items = items.filter(p => p.category === cat);
+          }
+          if (promoOnly) {
+            items = items.filter(p => p.is_promo);
+          }
+
+          const total = items.length;
+          const totalPages = Math.ceil(total / limit) || 1;
+          const start = (page - 1) * limit;
+          const paged = items.slice(start, start + limit);
+
+          return new Response(JSON.stringify({
+            total: total,
+            page: page,
+            limit: limit,
+            total_pages: totalPages,
+            products: paged
+          }), { status: 200, headers: {'Content-Type': 'application/json'} });
+        }
+
+        // 10. Basket compare
+        if (path === '/api/basket/compare') {
+          return new Response(JSON.stringify({ totals: {}, items: [] }), { status: 200, headers: {'Content-Type': 'application/json'} });
+        }
+
+      } catch(err) {
+        console.error('Static adapter fallback error:', err);
+      }
+
+      return originalFetch(url, options);
+    };
+
     // State management
 
     let state = {
