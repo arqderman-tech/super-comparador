@@ -21,8 +21,10 @@
   <!-- Chart.js -->
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- HTML5 QR / Barcode Scanner -->
-  <script src="/html5-qrcode.min.js"></script>
+  <!-- QR & 1D Barcode Decoders (Quagga2 + ZXing + Html5Qrcode) -->
+  <script src="./quagga.min.js?v=2"></script>
+  <script src="./zxing.min.js?v=2"></script>
+  <script src="./html5-qrcode.min.js?v=2"></script>
 
   <script>
 
@@ -90,14 +92,21 @@
     .scanner-laser {
       animation: scan-laser 2.2s ease-in-out infinite;
     }
+    .scanner-laser-detected {
+      animation: none !important;
+      background: #10b981 !important;
+      box-shadow: 0 0 16px #10b981 !important;
+    }
     #scanner-reader video {
-      object-fit: cover !important;
+      object-fit: contain !important;
       border-radius: 1rem;
       width: 100% !important;
-      max-height: 380px;
+      max-height: 420px;
+      background: #020617;
     }
     #scanner-reader {
       border: none !important;
+      position: relative;
     }
     #scanner-reader__scan_region {
       background: transparent !important;
@@ -457,7 +466,7 @@
 
               <div class="w-9 h-9 rounded-lg bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-1 shrink-0 overflow-hidden">
 
-                <img src="/logos/lagallega.png" alt="La Gallega" class="w-full h-full object-contain">
+                <img src="./logos/lagallega.png" alt="La Gallega" class="w-full h-full object-contain">
 
               </div>
 
@@ -487,7 +496,7 @@
 
               <div class="w-9 h-9 rounded-lg bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-1 shrink-0 overflow-hidden">
 
-                <img src="/logos/coto.svg" alt="COTO Digital" class="w-full h-full object-contain">
+                <img src="./logos/coto.svg" alt="COTO Digital" class="w-full h-full object-contain">
 
               </div>
 
@@ -517,7 +526,7 @@
 
               <div class="w-9 h-9 rounded-lg bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-1 shrink-0 overflow-hidden">
 
-                <img src="/logos/carrefour.svg" alt="Carrefour" class="w-full h-full object-contain">
+                <img src="./logos/carrefour.svg" alt="Carrefour" class="w-full h-full object-contain">
 
               </div>
 
@@ -547,7 +556,7 @@
 
               <div class="w-9 h-9 rounded-lg bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-1 shrink-0 overflow-hidden">
 
-                <img src="/logos/lareina.svg" alt="La Reina" class="w-full h-full object-contain">
+                <img src="./logos/lareina.svg" alt="La Reina" class="w-full h-full object-contain">
 
               </div>
 
@@ -575,7 +584,7 @@
 
               <div class="w-9 h-9 rounded-lg bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-1 shrink-0 overflow-hidden">
 
-                <img src="/logos/jumbo.png" alt="Jumbo" class="w-full h-full object-contain">
+                <img src="./logos/jumbo.png" alt="Jumbo" class="w-full h-full object-contain">
 
               </div>
 
@@ -605,7 +614,7 @@
 
               <div class="w-9 h-9 rounded-lg bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-1 shrink-0 overflow-hidden">
 
-                <img src="/logos/laanonima.svg" alt="La Anónima" class="w-full h-full object-contain">
+                <img src="./logos/laanonima.svg" alt="La Anónima" class="w-full h-full object-contain">
 
               </div>
 
@@ -1025,7 +1034,7 @@
 
                   <div class="inline-flex items-center justify-end gap-1.5">
 
-                    <img src="/logos/lagallega.png" class="h-4 w-auto object-contain max-w-[20px]" alt="">
+                    <img src="./logos/lagallega.png" class="h-4 w-auto object-contain max-w-[20px]" alt="">
 
                     <span>La Gallega</span>
 
@@ -1037,7 +1046,7 @@
 
                   <div class="inline-flex items-center justify-end gap-1.5">
 
-                    <img src="/logos/coto.svg" class="h-4 w-auto object-contain max-w-[20px]" alt="">
+                    <img src="./logos/coto.svg" class="h-4 w-auto object-contain max-w-[20px]" alt="">
 
                     <span>COTO Digital</span>
 
@@ -1049,7 +1058,7 @@
 
                   <div class="inline-flex items-center justify-end gap-1.5">
 
-                    <img src="/logos/carrefour.svg" class="h-4 w-auto object-contain max-w-[20px]" alt="">
+                    <img src="./logos/carrefour.svg" class="h-4 w-auto object-contain max-w-[20px]" alt="">
 
                     <span>Carrefour</span>
 
@@ -1061,7 +1070,7 @@
 
                   <div class="inline-flex items-center justify-end gap-1.5">
 
-                    <img src="/logos/lareina.svg" class="h-4 w-auto object-contain max-w-[20px]" alt="">
+                    <img src="./logos/lareina.svg" class="h-4 w-auto object-contain max-w-[20px]" alt="">
 
                     <span>La Reina</span>
 
@@ -1073,7 +1082,7 @@
 
                   <div class="inline-flex items-center justify-end gap-1.5">
 
-                    <img src="/logos/jumbo.png" class="h-4 w-auto object-contain max-w-[20px]" alt="">
+                    <img src="./logos/jumbo.png" class="h-4 w-auto object-contain max-w-[20px]" alt="">
 
                     <span>Jumbo</span>
 
@@ -1085,7 +1094,7 @@
 
                   <div class="inline-flex items-center justify-end gap-1.5">
 
-                    <img src="/logos/laanonima.svg" class="h-4 w-auto object-contain max-w-[20px]" alt="">
+                    <img src="./logos/laanonima.svg" class="h-4 w-auto object-contain max-w-[20px]" alt="">
 
                     <span>La Anónima</span>
 
@@ -1198,37 +1207,53 @@
             </div>
 
             <!-- Viewfinder Camera Box -->
-            <div class="relative bg-slate-950 rounded-2xl overflow-hidden shadow-inner border-2 border-slate-800 min-h-[300px] sm:min-h-[360px] flex items-center justify-center">
+            <div id="scanner-viewfinder-container" class="relative bg-slate-950 rounded-2xl overflow-hidden shadow-inner border-2 border-slate-800 min-h-[300px] sm:min-h-[360px] flex items-center justify-center cursor-pointer select-none" onclick="handleViewfinderClick(event)" title="Tocá para capturar y escanear el fotograma actual">
               
               <!-- HTML5 QR Scanner Video Viewport -->
               <div id="scanner-reader" class="w-full h-full min-h-[300px]"></div>
 
+              <!-- Camera Shutter Flash Effect -->
+              <div id="scanner-flash-effect" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-150 z-20"></div>
+
               <!-- Viewfinder Overlay Elements (Corner brackets & Laser line) -->
-              <div id="scanner-overlay" class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-6 hidden">
+              <div id="scanner-overlay" class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-6 hidden z-10">
+                <!-- Floating Success Badge -->
+                <div id="scanner-success-badge" class="hidden absolute top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-emerald-500/40 flex items-center gap-2 pointer-events-none z-30 animate-pulse">
+                  <i class="fa-solid fa-circle-check"></i>
+                  <span id="scanner-success-badge-text">¡Código Detectado!</span>
+                </div>
+
                 <!-- Target Reticle Box -->
-                <div class="relative w-64 h-44 sm:w-72 sm:h-48 border-2 border-dashed border-pink-400/60 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.3)]">
+                <div id="scanner-reticle-box" class="relative w-64 h-44 sm:w-72 sm:h-48 border-2 border-dashed border-pink-400/70 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.3)] transition-all duration-200">
                   <!-- Reticle Corners -->
-                  <div class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-pink-500 rounded-tl-lg"></div>
-                  <div class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-pink-500 rounded-tr-lg"></div>
-                  <div class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-pink-500 rounded-bl-lg"></div>
-                  <div class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-pink-500 rounded-br-lg"></div>
+                  <div id="reticle-tl" class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-pink-500 rounded-tl-lg transition-colors"></div>
+                  <div id="reticle-tr" class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-pink-500 rounded-tr-lg transition-colors"></div>
+                  <div id="reticle-bl" class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-pink-500 rounded-bl-lg transition-colors"></div>
+                  <div id="reticle-br" class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-pink-500 rounded-br-lg transition-colors"></div>
                   <!-- Laser Scan Line -->
-                  <div class="scanner-laser absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-pink-400 to-transparent shadow-[0_0_12px_#ec4899]"></div>
+                  <div id="scanner-laser-line" class="scanner-laser absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-pink-400 to-transparent shadow-[0_0_12px_#ec4899] transition-all"></div>
                   <!-- Instruction Tag -->
-                  <span class="text-[11px] font-bold text-white/90 bg-black/60 px-2.5 py-1 rounded-md backdrop-blur-sm pointer-events-none">
+                  <span id="scanner-instruction-tag" class="text-[11px] font-bold text-white/95 bg-black/70 px-2.5 py-1 rounded-md backdrop-blur-sm pointer-events-none border border-white/10">
                     Centrá el código de barras
+                  </span>
+                </div>
+
+                <!-- Live Tap-to-capture hint -->
+                <div class="absolute bottom-3 text-center pointer-events-none">
+                  <span class="text-[10px] text-slate-200/90 bg-black/75 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10 shadow-sm">
+                    <i class="fa-solid fa-camera mr-1 text-pink-400"></i> Tocá para capturar • Mantené a 20-30 cm para enfocar
                   </span>
                 </div>
               </div>
 
               <!-- Camera Idle / Placeholder State -->
-              <div id="scanner-idle-placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-300 bg-slate-950/95 space-y-4">
+              <div id="scanner-idle-placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-300 bg-slate-950/95 space-y-4 z-20">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-900 to-pink-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-pink-500/20">
                   <i class="fa-solid fa-barcode"></i>
                 </div>
                 <div class="max-w-xs space-y-1">
                   <p class="font-bold text-white text-base">Cámara en Espera</p>
-                  <p class="text-xs text-slate-400">Tocá para activar la cámara de tu celular o capturar una foto del código de barras.</p>
+                  <p class="text-xs text-slate-400">Iniciá la cámara en vivo para auto-detección continua o capturá una foto del producto.</p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2.5 w-full max-w-xs">
                   <button onclick="startScannerCamera()" class="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-600/30 transition transform active:scale-95">
@@ -1245,10 +1270,14 @@
 
             <!-- Camera Controls Bar -->
             <div class="mt-4 flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-slate-100">
-              <div class="flex items-center space-x-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <button id="btn-toggle-camera" onclick="toggleScannerCamera()" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white shadow-sm">
                   <i class="fa-solid fa-video" id="btn-camera-icon"></i>
                   <span id="btn-camera-text">Activar Cámara</span>
+                </button>
+                <button id="btn-capture-frame" onclick="captureCurrentFrameAndScan()" class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-md shadow-pink-600/25 active:scale-95" title="Captura el cuadro actual en alta resolución y decodifica el código">
+                  <i class="fa-solid fa-camera"></i>
+                  <span>Capturar Fotograma</span>
                 </button>
                 <button id="btn-switch-camera" onclick="switchScannerCamera()" class="p-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Cambiar Cámara">
                   <i class="fa-solid fa-camera-rotate text-sm"></i>
@@ -1261,8 +1290,8 @@
               <!-- Quick snap file fallback -->
               <div>
                 <label for="scanner-file-input-inline" class="px-3 py-2 rounded-xl text-xs font-semibold bg-pink-50 hover:bg-pink-100 text-brand-700 border border-pink-200 flex items-center gap-1.5 cursor-pointer transition">
-                  <i class="fa-solid fa-camera"></i>
-                  <span>Tomar Foto Directa</span>
+                  <i class="fa-solid fa-image"></i>
+                  <span>Foto / Archivo</span>
                 </label>
                 <input type="file" id="scanner-file-input-inline" accept="image/*" capture="environment" class="hidden" onchange="handleScannerFileInput(event)">
               </div>
@@ -1994,9 +2023,8 @@
 
 
 
-    // ==============================================================
-    // HYBRID ADAPTER: FASTAPI (LOCAL) + STATIC FALLBACK (GITHUB PAGES)
-    // ==============================================================
+    // State management
+
     const isGitHubPages = location.hostname.endsWith('github.io') || location.protocol === 'file:';
     let staticCache = {
       products: null,
@@ -2175,7 +2203,6 @@
       return originalFetch(url, options);
     };
 
-    // State management
 
     let state = {
 
@@ -4033,7 +4060,7 @@
 
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs">
 
-                  <img src="/logos/coto.svg" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
+                  <img src="./logos/coto.svg" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
 
                   COTO es ${diffPct.toFixed(1)}% más barato
 
@@ -4057,7 +4084,7 @@
 
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200 shadow-xs">
 
-                  <img src="/logos/carrefour.svg" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
+                  <img src="./logos/carrefour.svg" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
 
                   Carrefour es ${diffPct.toFixed(1)}% más barato
 
@@ -4081,7 +4108,7 @@
 
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-pink-100 text-brand-700 border border-pink-200 shadow-xs">
 
-                  <img src="/logos/lagallega.png" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
+                  <img src="./logos/lagallega.png" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
 
                   La Gallega es ${diffPct.toFixed(1)}% más barato
 
@@ -4105,7 +4132,7 @@
 
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-orange-100 text-orange-800 border border-orange-200 shadow-xs">
 
-                  <img src="/logos/lareina.svg" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
+                  <img src="./logos/lareina.svg" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
 
                   La Reina es ${diffPct.toFixed(1)}% más barato
 
@@ -4129,7 +4156,7 @@
 
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs">
 
-                  <img src="/logos/jumbo.png" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
+                  <img src="./logos/jumbo.png" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
 
                   Jumbo es ${diffPct.toFixed(1)}% más barato
 
@@ -4153,7 +4180,7 @@
 
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-red-100 text-red-800 border border-red-200 shadow-xs">
 
-                  <img src="/logos/laanonima.svg" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
+                  <img src="./logos/laanonima.svg" class="w-3.5 h-3.5 object-contain mr-1 inline" alt="">
 
                   La Anónima es ${diffPct.toFixed(1)}% más barato
 
@@ -5861,16 +5888,21 @@
 
     
     // ==========================================
-    // BARCODE SCANNER LOGIC & CONTROLS
+    // BARCODE SCANNER LOGIC & CONTROLS (MULTI-ENGINE V2: QUAGGA2 + ZXING + BARCODEDETECTOR)
     // ==========================================
     let scannerState = {
       html5QrCode: null,
+      barcodeDetector: null,
       isScanning: false,
       cameras: [],
       selectedCameraId: null,
       torchOn: false,
       lastScannedCode: null,
-      lastScannedAt: 0
+      lastScannedAt: 0,
+      detectionInterval: null,
+      isProcessingFrame: false,
+      liveCanvas: null,
+      cropCanvas: null
     };
 
     function playScannerBeep() {
@@ -5881,27 +5913,357 @@
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(1100, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.09);
-          gain.gain.setValueAtTime(0.25, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.11);
+          osc.frequency.setValueAtTime(1200, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.35, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
           osc.connect(gain);
           gain.connect(ctx.destination);
           osc.start();
-          osc.stop(ctx.currentTime + 0.11);
+          osc.stop(ctx.currentTime + 0.12);
         }
       } catch(e) {}
       if (navigator.vibrate) {
         try {
-          navigator.vibrate([70, 30, 70]);
+          navigator.vibrate([90, 40, 90]);
         } catch(e) {}
       }
+    }
+
+    // 1. ENGINE: Native BarcodeDetector (GPU accelerated in Chrome/Edge/Android)
+    async function initBarcodeDetector() {
+      if (!('BarcodeDetector' in window)) return null;
+      if (scannerState.barcodeDetector) return scannerState.barcodeDetector;
+      try {
+        const supported = await BarcodeDetector.getSupportedFormats();
+        const preferred = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'itf', 'qr_code'];
+        const formats = preferred.filter(f => supported.includes(f));
+        if (formats.length > 0) {
+          scannerState.barcodeDetector = new BarcodeDetector({ formats });
+          console.log('[Scanner] BarcodeDetector initialized with formats:', formats);
+        }
+      } catch(e) {
+        console.warn('[Scanner] BarcodeDetector init error:', e);
+      }
+      return scannerState.barcodeDetector;
+    }
+
+    async function decodeWithBarcodeDetector(source) {
+      if (!('BarcodeDetector' in window)) return null;
+      try {
+        const detector = await initBarcodeDetector();
+        if (!detector) return null;
+        const results = await detector.detect(source);
+        if (results && results.length > 0 && results[0].rawValue) {
+          return results[0].rawValue.trim();
+        }
+      } catch(e) {}
+      return null;
+    }
+
+    // 2. ENGINE: ZXing MultiFormatReader (with GlobalHistogramBinarizer for 1D barcodes)
+    function decodeCanvasWithZXing(canvas) {
+      if (!window.ZXing) return null;
+      try {
+        const hints = new Map();
+        if (window.ZXing.DecodeHintType && window.ZXing.BarcodeFormat) {
+          hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+            window.ZXing.BarcodeFormat.EAN_13,
+            window.ZXing.BarcodeFormat.EAN_8,
+            window.ZXing.BarcodeFormat.UPC_A,
+            window.ZXing.BarcodeFormat.UPC_E,
+            window.ZXing.BarcodeFormat.CODE_128,
+            window.ZXing.BarcodeFormat.CODE_39,
+            window.ZXing.BarcodeFormat.ITF,
+            window.ZXing.BarcodeFormat.QR_CODE
+          ]);
+          hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
+        }
+
+        const luminanceSource = new window.ZXing.HTMLCanvasElementLuminanceSource(canvas);
+
+        // Pass A: GlobalHistogramBinarizer (Engineered specifically by ZXing for 1D linear barcodes)
+        try {
+          const bitmap = new window.ZXing.BinaryBitmap(new window.ZXing.GlobalHistogramBinarizer(luminanceSource));
+          const reader = new window.ZXing.MultiFormatReader();
+          const res = reader.decode(bitmap, hints);
+          if (res && res.getText()) {
+            return res.getText().trim();
+          }
+        } catch(e) {}
+
+        // Pass B: HybridBinarizer (Adaptive local thresholding)
+        try {
+          const bitmap = new window.ZXing.BinaryBitmap(new window.ZXing.HybridBinarizer(luminanceSource));
+          const reader = new window.ZXing.MultiFormatReader();
+          const res = reader.decode(bitmap, hints);
+          if (res && res.getText()) {
+            return res.getText().trim();
+          }
+        } catch(e) {}
+
+      } catch(err) {
+        // Not found on this pass
+      }
+      return null;
+    }
+
+    // 3. ENGINE: Quagga2 (World-renowned dedicated 1D barcode edge locator)
+    function decodeCanvasWithQuagga(canvas) {
+      if (!window.Quagga) return Promise.resolve(null);
+      return new Promise((resolve) => {
+        try {
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+          window.Quagga.decodeSingle({
+            src: dataUrl,
+            numOfWorkers: 0,
+            inputStream: {
+              size: Math.max(canvas.width, 800)
+            },
+            decoder: {
+              readers: [
+                "ean_reader",
+                "ean_8_reader",
+                "upc_reader",
+                "upc_e_reader",
+                "code_128_reader",
+                "code_39_reader"
+              ],
+              multiple: false
+            },
+            locator: {
+              patchSize: "medium",
+              halfSample: false
+            }
+          }, function(result) {
+            if (result && result.codeResult && result.codeResult.code) {
+              resolve(result.codeResult.code.trim());
+            } else {
+              resolve(null);
+            }
+          });
+        } catch(err) {
+          resolve(null);
+        }
+      });
+    }
+
+    // MASTER MULTI-PASS DECODER: Combines all engines across normal, center-cropped, enhanced and rotated frames
+    async function decodeImageWithAllEngines(sourceCanvas) {
+      if (!sourceCanvas) return null;
+
+      console.log('[Scanner] Running multi-engine decode on frame:', sourceCanvas.width, 'x', sourceCanvas.height);
+
+      // Pass 1: BarcodeDetector on full frame
+      let code = await decodeWithBarcodeDetector(sourceCanvas);
+      if (code) {
+        console.log('[Scanner] Detected by BarcodeDetector (Full Frame):', code);
+        return code;
+      }
+
+      // Pass 2: ZXing GlobalHistogram on full frame
+      code = decodeCanvasWithZXing(sourceCanvas);
+      if (code) {
+        console.log('[Scanner] Detected by ZXing (Full Frame):', code);
+        return code;
+      }
+
+      // Pass 3: Quagga2 on full frame
+      code = await decodeCanvasWithQuagga(sourceCanvas);
+      if (code) {
+        console.log('[Scanner] Detected by Quagga2 (Full Frame):', code);
+        return code;
+      }
+
+      // Pass 4: Center Reticle Crop (Focusing specifically on the pink reticle area)
+      try {
+        const cropCanvas = document.createElement('canvas');
+        const cw = Math.floor(sourceCanvas.width * 0.70);
+        const ch = Math.floor(sourceCanvas.height * 0.50);
+        const cx = Math.floor((sourceCanvas.width - cw) / 2);
+        const cy = Math.floor((sourceCanvas.height - ch) / 2);
+        cropCanvas.width = cw;
+        cropCanvas.height = ch;
+        const cCtx = cropCanvas.getContext('2d', { willReadFrequently: true });
+        cCtx.drawImage(sourceCanvas, cx, cy, cw, ch, 0, 0, cw, ch);
+
+        code = await decodeWithBarcodeDetector(cropCanvas);
+        if (code) {
+          console.log('[Scanner] Detected by BarcodeDetector (Center Crop):', code);
+          return code;
+        }
+
+        code = decodeCanvasWithZXing(cropCanvas);
+        if (code) {
+          console.log('[Scanner] Detected by ZXing (Center Crop):', code);
+          return code;
+        }
+
+        code = await decodeCanvasWithQuagga(cropCanvas);
+        if (code) {
+          console.log('[Scanner] Detected by Quagga2 (Center Crop):', code);
+          return code;
+        }
+      } catch(e) {}
+
+      // Pass 5: High Contrast & Binarization (Solves glare, glossy packages and dim lighting)
+      try {
+        const enhCanvas = document.createElement('canvas');
+        enhCanvas.width = sourceCanvas.width;
+        enhCanvas.height = sourceCanvas.height;
+        const eCtx = enhCanvas.getContext('2d', { willReadFrequently: true });
+        eCtx.drawImage(sourceCanvas, 0, 0);
+
+        const imgData = eCtx.getImageData(0, 0, enhCanvas.width, enhCanvas.height);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+          // Linear contrast stretch + threshold clamp
+          const val = (gray - 128) * 1.8 + 128;
+          const clamped = val < 0 ? 0 : (val > 255 ? 255 : val);
+          d[i] = clamped;
+          d[i+1] = clamped;
+          d[i+2] = clamped;
+        }
+        eCtx.putImageData(imgData, 0, 0);
+
+        code = decodeCanvasWithZXing(enhCanvas);
+        if (code) {
+          console.log('[Scanner] Detected by ZXing (Contrast Boost):', code);
+          return code;
+        }
+
+        code = await decodeCanvasWithQuagga(enhCanvas);
+        if (code) {
+          console.log('[Scanner] Detected by Quagga2 (Contrast Boost):', code);
+          return code;
+        }
+      } catch(e) {}
+
+      // Pass 6: 90° Rotated canvas (in case barcode is held vertically)
+      try {
+        const rotCanvas = document.createElement('canvas');
+        rotCanvas.width = sourceCanvas.height;
+        rotCanvas.height = sourceCanvas.width;
+        const rCtx = rotCanvas.getContext('2d', { willReadFrequently: true });
+        rCtx.translate(rotCanvas.width / 2, rotCanvas.height / 2);
+        rCtx.rotate(90 * Math.PI / 180);
+        rCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
+
+        code = decodeCanvasWithZXing(rotCanvas);
+        if (code) {
+          console.log('[Scanner] Detected by ZXing (90° Rotated):', code);
+          return code;
+        }
+
+        code = await decodeCanvasWithQuagga(rotCanvas);
+        if (code) {
+          console.log('[Scanner] Detected by Quagga2 (90° Rotated):', code);
+          return code;
+        }
+      } catch(e) {}
+
+      console.log('[Scanner] Multi-engine scan finished: no code resolved in this frame.');
+      return null;
     }
 
     function initScannerTab() {
       renderRecentScans();
       if (!scannerState.isScanning) {
         startScannerCamera();
+      }
+    }
+
+    // Continuous real-time detection loop on live video (8 times per second)
+    function startDirectDetectionLoop() {
+      if (scannerState.detectionInterval) {
+        clearInterval(scannerState.detectionInterval);
+        scannerState.detectionInterval = null;
+      }
+
+      if (!scannerState.liveCanvas) {
+        scannerState.liveCanvas = document.createElement('canvas');
+      }
+
+      let busy = false;
+      scannerState.detectionInterval = setInterval(async () => {
+        if (!scannerState.isScanning || busy || scannerState.isProcessingFrame) return;
+
+        const video = document.querySelector('#scanner-reader video');
+        if (!video || video.readyState < 2 || video.paused || video.ended) return;
+
+        busy = true;
+        try {
+          // 1. GPU BarcodeDetector directly on <video> (if supported, sub-millisecond)
+          if (scannerState.barcodeDetector) {
+            try {
+              const barcodes = await scannerState.barcodeDetector.detect(video);
+              if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                const code = barcodes[0].rawValue.trim();
+                if (code) {
+                  handleBarcodeDetected(code);
+                  busy = false;
+                  return;
+                }
+              }
+            } catch(e) {}
+          }
+
+          // 2. Offscreen frame grab for ZXing (works universally in ALL browsers)
+          const canvas = scannerState.liveCanvas;
+          const vw = video.videoWidth || 1280;
+          const vh = video.videoHeight || 720;
+          if (canvas.width !== vw || canvas.height !== vh) {
+            canvas.width = vw;
+            canvas.height = vh;
+          }
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          ctx.drawImage(video, 0, 0, vw, vh);
+
+          // Fast center reticle check with ZXing (5ms)
+          const cw = Math.floor(vw * 0.75);
+          const ch = Math.floor(vh * 0.55);
+          const cx = Math.floor((vw - cw) / 2);
+          const cy = Math.floor((vh - ch) / 2);
+
+          if (!scannerState.cropCanvas) {
+            scannerState.cropCanvas = document.createElement('canvas');
+          }
+          const cCanvas = scannerState.cropCanvas;
+          if (cCanvas.width !== cw || cCanvas.height !== ch) {
+            cCanvas.width = cw;
+            cCanvas.height = ch;
+          }
+          const cCtx = cCanvas.getContext('2d', { willReadFrequently: true });
+          cCtx.drawImage(canvas, cx, cy, cw, ch, 0, 0, cw, ch);
+
+          let code = decodeCanvasWithZXing(cCanvas);
+          if (code) {
+            handleBarcodeDetected(code);
+            busy = false;
+            return;
+          }
+
+          // Full frame ZXing check
+          code = decodeCanvasWithZXing(canvas);
+          if (code) {
+            handleBarcodeDetected(code);
+            busy = false;
+            return;
+          }
+
+        } catch(err) {
+          // Ignore transient errors
+        } finally {
+          busy = false;
+        }
+      }, 120);
+    }
+
+    function stopDirectDetectionLoop() {
+      if (scannerState.detectionInterval) {
+        clearInterval(scannerState.detectionInterval);
+        scannerState.detectionInterval = null;
       }
     }
 
@@ -5920,9 +6282,14 @@
           await new Promise(r => setTimeout(r, 600));
         }
 
+        await initBarcodeDetector();
+
         if (!scannerState.html5QrCode) {
           scannerState.html5QrCode = new Html5Qrcode("scanner-reader", {
             verbose: false,
+            experimentalFeatures: {
+              useBarCodeDetectorIfSupported: true
+            },
             formatsToSupport: [
               Html5QrcodeSupportedFormats.EAN_13,
               Html5QrcodeSupportedFormats.EAN_8,
@@ -5953,11 +6320,8 @@
           console.warn('Cameras enumeration warning:', e);
         }
 
-        let cameraConfig;
-        if (preferredCameraId) {
-          cameraConfig = { deviceId: { exact: preferredCameraId } };
-          scannerState.selectedCameraId = preferredCameraId;
-        } else if (scannerState.cameras.length > 0) {
+        let cameraConfig = preferredCameraId ? { deviceId: { exact: preferredCameraId } } : { facingMode: "environment" };
+        if (!preferredCameraId && scannerState.cameras && scannerState.cameras.length > 0) {
           const backCam = scannerState.cameras.find(c => {
             const lbl = (c.label || '').toLowerCase();
             return lbl.includes('back') || lbl.includes('rear') || lbl.includes('trasera') || lbl.includes('environment');
@@ -5965,35 +6329,40 @@
           if (backCam) {
             cameraConfig = { deviceId: { exact: backCam.id } };
             scannerState.selectedCameraId = backCam.id;
-          } else {
-            const fallbackId = scannerState.cameras[scannerState.cameras.length - 1].id;
-            cameraConfig = { deviceId: { exact: fallbackId } };
-            scannerState.selectedCameraId = fallbackId;
           }
-        } else {
-          cameraConfig = { facingMode: "environment" };
         }
 
         const scanConfig = {
-          fps: 15,
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
-            const width = Math.min(Math.floor(viewfinderWidth * 0.88), 320);
-            const height = Math.min(Math.floor(width * 0.55), 180);
-            return { width: Math.max(width, 220), height: Math.max(height, 120) };
-          },
-          aspectRatio: 1.333334
+          fps: 20
         };
 
-        await scannerState.html5QrCode.start(
-          cameraConfig,
-          scanConfig,
-          (decodedText) => {
-            handleBarcodeDetected(decodedText);
-          },
-          (errorMessage) => {}
-        );
+        try {
+          await scannerState.html5QrCode.start(
+            cameraConfig,
+            scanConfig,
+            (decodedText) => {
+              handleBarcodeDetected(decodedText);
+            },
+            (errorMessage) => {}
+          );
+        } catch (firstErr) {
+          console.warn('Initial camera start failed, retrying standard environment fallback:', firstErr);
+          await scannerState.html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 15 },
+            (decodedText) => {
+              handleBarcodeDetected(decodedText);
+            },
+            (errorMessage) => {}
+          );
+        }
 
         scannerState.isScanning = true;
+        resetReticleStyles();
+
+        // Start multi-engine continuous detection loop
+        startDirectDetectionLoop();
+
         if (idlePlaceholder) idlePlaceholder.classList.add('hidden');
         if (overlay) overlay.classList.remove('hidden');
         if (permAlert) permAlert.classList.add('hidden');
@@ -6012,6 +6381,8 @@
       } catch(err) {
         console.error('Camera startup error:', err);
         scannerState.isScanning = false;
+        stopDirectDetectionLoop();
+
         if (idlePlaceholder) idlePlaceholder.classList.remove('hidden');
         if (overlay) overlay.classList.add('hidden');
 
@@ -6029,16 +6400,27 @@
         if (permAlert) {
           permAlert.classList.remove('hidden');
           const alertMsg = document.getElementById('scanner-permission-alert-text');
-          if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-            if (alertMsg) alertMsg.innerHTML = 'Los navegadores en celulares exigen HTTPS para transmitir video en vivo por red local. <strong>¡Podés usar el botón "Tomar Foto Directa" para capturar el código al instante con la cámara del celular!</strong>';
+          const isSecure = window.isSecureContext;
+          const errDetail = (err && (err.name || err.message)) ? `${err.name || 'Error'}: ${err.message || ''}` : String(err);
+          
+          if (!isSecure && location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            if (alertMsg) {
+              alertMsg.innerHTML = `<strong>Aviso de seguridad del navegador:</strong> La IP local aún no es reconocida como origen seguro.<br>
+              En Chrome escribí <code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>, asegurate de haber escrito en la caja de texto: <code>http://${location.host}</code>, seleccionar <strong>Enabled</strong> y reiniciar Chrome.<br>
+              <span class="text-rose-600 font-mono mt-1 block">Diagnóstico: isSecureContext=false | ${errDetail}</span>`;
+            }
           } else {
-            if (alertMsg) alertMsg.innerHTML = 'Verificá los permisos de cámara en tu navegador o probá con el botón "Tomar Foto Directa".';
+            if (alertMsg) {
+              alertMsg.innerHTML = `<strong>No se pudo abrir la cámara:</strong> ${errDetail}<br>
+              Verificá los permisos del sitio tocando el icono a la izquierda de la barra de direcciones o en Ajustes de Android > Aplicaciones > Chrome > Permisos > Cámara.`;
+            }
           }
         }
       }
     }
 
     async function stopScannerCamera() {
+      stopDirectDetectionLoop();
       if (scannerState.html5QrCode && scannerState.isScanning) {
         try {
           await scannerState.html5QrCode.stop();
@@ -6111,30 +6493,166 @@
       }
     }
 
+    function triggerScanFlash() {
+      const flash = document.getElementById('scanner-flash-effect');
+      if (flash) {
+        flash.style.opacity = '0.8';
+        setTimeout(() => { flash.style.opacity = '0'; }, 180);
+      }
+    }
+
+    function triggerScanSuccessEffect(detectedCode) {
+      const reticleBox = document.getElementById('scanner-reticle-box');
+      const laser = document.getElementById('scanner-laser-line');
+      const badge = document.getElementById('scanner-success-badge');
+      const badgeText = document.getElementById('scanner-success-badge-text');
+      const corners = ['reticle-tl', 'reticle-tr', 'reticle-bl', 'reticle-br'];
+
+      if (reticleBox) {
+        reticleBox.className = 'relative w-64 h-44 sm:w-72 sm:h-48 border-2 border-emerald-400 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.7)] transition-all duration-200';
+      }
+      if (laser) {
+        laser.className = 'scanner-laser scanner-laser-detected absolute left-2 right-2 h-1 bg-emerald-400 shadow-[0_0_16px_#10b981]';
+      }
+      corners.forEach(id => {
+        const c = document.getElementById(id);
+        if (c) c.className = c.className.replace(/border-pink-500/g, 'border-emerald-400');
+      });
+      if (badge && badgeText) {
+        badgeText.textContent = `¡Código ${detectedCode}!`;
+        badge.classList.remove('hidden');
+      }
+
+      setTimeout(resetReticleStyles, 2500);
+    }
+
+    function resetReticleStyles() {
+      const reticleBox = document.getElementById('scanner-reticle-box');
+      const laser = document.getElementById('scanner-laser-line');
+      const badge = document.getElementById('scanner-success-badge');
+      const corners = ['reticle-tl', 'reticle-tr', 'reticle-bl', 'reticle-br'];
+
+      if (reticleBox) {
+        reticleBox.className = 'relative w-64 h-44 sm:w-72 sm:h-48 border-2 border-dashed border-pink-400/70 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.3)] transition-all duration-200';
+      }
+      if (laser) {
+        laser.className = 'scanner-laser absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-pink-400 to-transparent shadow-[0_0_12px_#ec4899] transition-all';
+      }
+      corners.forEach(id => {
+        const c = document.getElementById(id);
+        if (c) c.className = c.className.replace(/border-emerald-400/g, 'border-pink-500');
+      });
+      if (badge) badge.classList.add('hidden');
+    }
+
+    function handleViewfinderClick(event) {
+      if (event.target.closest('button') || event.target.closest('input') || event.target.closest('label')) return;
+      if (scannerState.isScanning) {
+        captureCurrentFrameAndScan();
+      } else {
+        startScannerCamera();
+      }
+    }
+
+    // SNAP & SCAN LIVE FRAME: High-resolution frame grab with all engines
+    async function captureCurrentFrameAndScan() {
+      const video = document.querySelector('#scanner-reader video');
+      const statusBadge = document.getElementById('scanner-camera-status');
+
+      if (!video || video.readyState < 2) {
+        showToast('Iniciá la cámara primero para capturar');
+        return;
+      }
+
+      if (scannerState.isProcessingFrame) return;
+      scannerState.isProcessingFrame = true;
+
+      triggerScanFlash();
+      if (statusBadge) {
+        statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-pink-500 animate-spin"></span> Analizando fotograma con 3 motores...';
+        statusBadge.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-pink-50 text-pink-700 flex items-center gap-1.5';
+      }
+
+      try {
+        const width = video.videoWidth || 1280;
+        const height = video.videoHeight || 720;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(video, 0, 0, width, height);
+
+        const detected = await decodeImageWithAllEngines(canvas);
+        if (detected) {
+          handleBarcodeDetected(detected);
+        } else {
+          showToast('No se detectó código. Mantené el producto a 20-30 cm para que la cámara haga foco.');
+          if (statusBadge && scannerState.isScanning) {
+            statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Escaneando en vivo';
+            statusBadge.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 flex items-center gap-1.5';
+          }
+        }
+      } catch(err) {
+        console.error('Frame snapshot error:', err);
+        showToast('Error al procesar fotograma. Probá enfocar mejor.');
+      } finally {
+        scannerState.isProcessingFrame = false;
+      }
+    }
+
+    // FILE / CAMERA PHOTO UPLOAD SCANNER
     async function handleScannerFileInput(event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
 
       const statusBadge = document.getElementById('scanner-camera-status');
       if (statusBadge) {
-        statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-pink-500 animate-spin"></span> Procesando foto...';
+        statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-pink-500 animate-spin"></span> Procesando foto con 3 motores...';
         statusBadge.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-pink-50 text-pink-700 flex items-center gap-1.5';
       }
 
+      const wasScanning = scannerState.isScanning;
+      if (wasScanning) {
+        await stopScannerCamera();
+      }
+
       try {
-        if (!scannerState.html5QrCode) {
-          scannerState.html5QrCode = new Html5Qrcode("scanner-reader", { verbose: false });
+        const img = new Image();
+        const imgLoaded = new Promise((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = reject;
+          img.src = URL.createObjectURL(file);
+        });
+        await imgLoaded;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(img.src);
+
+        let detected = await decodeImageWithAllEngines(canvas);
+
+        if (!detected && scannerState.html5QrCode) {
+          try {
+            detected = await scannerState.html5QrCode.scanFile(file, false);
+          } catch(e) {}
         }
-        const decodedText = await scannerState.html5QrCode.scanFile(file, false);
-        if (decodedText) {
-          handleBarcodeDetected(decodedText);
+
+        if (detected) {
+          handleBarcodeDetected(detected);
+        } else {
+          showToast('No se detectó código de barras en la foto. Probá enfocar más cerca con buena iluminación.');
+          if (wasScanning) {
+            startScannerCamera();
+          }
         }
       } catch(err) {
         console.warn('Barcode not found in photo:', err);
-        showToast('No se detectó código de barras en la foto. Probá enfocar más cerca.');
-        if (statusBadge) {
-          statusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-400"></span> Listo';
-          statusBadge.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1.5';
+        showToast('No se pudo detectar código de barras en la imagen.');
+        if (wasScanning) {
+          startScannerCamera();
         }
       }
       event.target.value = '';
@@ -6151,6 +6669,7 @@
       scannerState.lastScannedCode = cleanCode;
       scannerState.lastScannedAt = now;
 
+      triggerScanSuccessEffect(cleanCode);
       playScannerBeep();
       lookupBarcode(cleanCode);
     }

@@ -7,6 +7,12 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+try:
+    import db_split
+    db_split.ensure_db()
+except Exception as e:
+    pass
+
 from db import init_db, get_stats, search_products, get_top_deals, compare_basket, get_connection, get_product_history, audit_product_deal, get_supermarket_updates
 import scraper
 import scraper_coto
