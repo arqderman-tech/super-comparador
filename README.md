@@ -60,9 +60,8 @@ flowchart LR
 El repositorio local ya está inicializado y con el commit creado. Para publicarlo:
 
 1. Creá un repositorio vacío en [GitHub](https://github.com/new) llamado `super-comparador`.
-2. Ejecutá en tu consola:
+2. Ejecutá en tu consola dentro de la carpeta del proyecto:
    ```powershell
-   cd "C:\Users\usuario\OneDrive - Depaoli Trosce\Aplicaciones\APLICACIONES FUNCIONALES\super-comparador-github"
    git remote add origin https://github.com/arqderman-tech/super-comparador.git
    git push -u origin main
    ```

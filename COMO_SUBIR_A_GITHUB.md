@@ -21,9 +21,7 @@ Todo el proyecto ya está preparado, configurado y listo para ser **100% autóno
 Abrí la consola de PowerShell y ejecutá:
 
 ```powershell
-cd "C:\Users\marti\OneDrive - Depaoli Trosce\Aplicaciones\APLICACIONES FUNCIONALES\super-comparador-github"
-
-# El origen ya quedó pre-vinculado, sólo necesitás empujar a main:
+# Desde la carpeta del proyecto:
 git push -u origin main
 ```
 

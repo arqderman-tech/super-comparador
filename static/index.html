@@ -1926,19 +1926,12 @@
     // Supermarket logos and badges
 
     const SUPER_LOGOS = {
-
-      'lagallega': '/logos/lagallega.png',
-
-      'coto': '/logos/coto.svg',
-
-      'carrefour': '/logos/carrefour.svg',
-
-      'lareina': '/logos/lareina.svg',
-
-      'jumbo': '/logos/jumbo.png',
-
-      'laanonima': '/logos/laanonima.svg'
-
+      'lagallega': './logos/lagallega.png',
+      'coto': './logos/coto.svg',
+      'carrefour': './logos/carrefour.svg',
+      'lareina': './logos/lareina.svg',
+      'jumbo': './logos/jumbo.png',
+      'laanonima': './logos/laanonima.svg'
     };
 
 
@@ -2075,13 +2068,23 @@
           return n;
         }
 
-        function matchSuperKey(dict, superm) {
-          if (!dict || typeof dict !== 'object') return [];
+        function matchSuperKey(dict, superm, fallback = null) {
+          if (!dict || typeof dict !== 'object') return fallback;
           const target = normSuper(superm);
           for (const k of Object.keys(dict)) {
             if (normSuper(k) === target) return dict[k];
           }
-          return dict['La Gallega'] || Object.values(dict)[0] || [];
+          return fallback;
+        }
+
+        function findInByEan(key) {
+          if (!staticCache.byEan || !key) return null;
+          const s = String(key).trim();
+          if (!s) return null;
+          return staticCache.byEan[s] || 
+                 staticCache.byEan[s.replace(/^0+/, '')] || 
+                 staticCache.byEan['0' + s] || 
+                 null;
         }
 
         // Path normalization for relative deployment on GitHub Pages
@@ -2107,7 +2110,7 @@
           if (Array.isArray(staticCache.categories)) {
             cats = staticCache.categories.filter(c => !c.supermarket || normSuper(c.supermarket) === normSuper(superm));
           } else {
-            cats = matchSuperKey(staticCache.categories, superm);
+            cats = matchSuperKey(staticCache.categories, superm, []) || [];
           }
           return new Response(JSON.stringify(cats), { status: 200, headers: {'Content-Type': 'application/json'} });
         }
@@ -2124,7 +2127,7 @@
           if (Array.isArray(staticCache.deals)) {
             dealsList = staticCache.deals.filter(d => normSuper(d.supermarket) === normSuper(superm));
           } else {
-            dealsList = matchSuperKey(staticCache.deals, superm);
+            dealsList = matchSuperKey(staticCache.deals, superm, []) || [];
           }
           const sliced = dealsList.slice(0, limit);
           return new Response(JSON.stringify(sliced), { status: 200, headers: {'Content-Type': 'application/json'} });
@@ -2155,7 +2158,7 @@
             const r = await originalFetch(dataPrefix + 'products_by_ean.json');
             staticCache.byEan = await r.json();
           }
-          let found = staticCache.byEan[ean] || staticCache.byEan[ean.replace(/^0+/, '')] || staticCache.byEan['0' + ean];
+          let found = findInByEan(ean);
           if (!found) {
             if (!staticCache.products) {
               const rp = await originalFetch(dataPrefix + 'products.json');
@@ -2197,7 +2200,91 @@
             const r = await originalFetch(dataPrefix + 'products_by_ean.json');
             staticCache.byEan = await r.json();
           }
-          const found = staticCache.byEan[id];
+
+          let p = null;
+          if (staticCache.superProducts) {
+            for (const slug of Object.keys(staticCache.superProducts)) {
+              p = staticCache.superProducts[slug].find(x => String(x.id) === String(id));
+              if (p) break;
+            }
+          }
+          if (!p && staticCache.products) {
+            p = staticCache.products.find(x => String(x.id) === String(id));
+          }
+
+          let found = null;
+          if (p) {
+            const cleanEan = (p.ean || '').trim();
+            const base = cleanEan ? findInByEan(cleanEan) : null;
+            const myStore = p.supermarket || (base && base.supermarket) || 'La Gallega';
+
+            let competitors = [];
+            let myHist = [];
+            let myStats = {};
+
+            if (base) {
+              const baseStore = base.supermarket || 'La Gallega';
+              if (normSuper(baseStore) !== normSuper(myStore) && base.price_promo) {
+                const diff = p.price_promo ? Math.round(((base.price_promo - p.price_promo) / p.price_promo) * 1000) / 10 : 0;
+                competitors.push({
+                  supermarket: baseStore,
+                  price: base.price_promo,
+                  difference_pct: diff,
+                  regular_price: base.price_regular || base.price_promo,
+                  has_promo: base.is_promo,
+                  promo_units: 1,
+                  promo_detail: ''
+                });
+              }
+              if (base.competitors && Array.isArray(base.competitors)) {
+                for (const c of base.competitors) {
+                  if (normSuper(c.supermarket) !== normSuper(myStore)) {
+                    const diff = p.price_promo ? Math.round(((c.price - p.price_promo) / p.price_promo) * 1000) / 10 : c.difference_pct;
+                    competitors.push({
+                      ...c,
+                      difference_pct: diff
+                    });
+                  }
+                }
+              }
+              if (base.histories) {
+                const m = matchSuperKey(base.histories, myStore, null);
+                if (m && m.history) {
+                  myHist = m.history;
+                  myStats = m.stats || {};
+                }
+              }
+            }
+
+            if (!myHist.length && base && normSuper(base.supermarket) === normSuper(myStore)) {
+              myHist = base.history || [];
+              myStats = base.history_stats || {};
+            }
+
+            found = {
+              id: p.id,
+              ean: p.ean || (base && base.ean) || '',
+              name: p.name || (base && base.name) || '',
+              category: p.category || (base && base.category) || '',
+              brand: p.brand || (base && base.brand) || '',
+              price_regular: p.price_regular || p.price_promo || (base && base.price_regular) || 0,
+              price_promo: p.price_promo || (base && base.price_promo) || 0,
+              is_promo: p.is_promo !== undefined ? p.is_promo : (base && base.is_promo) || 0,
+              discount_pct: p.discount_pct !== undefined ? p.discount_pct : (base && base.discount_pct) || 0,
+              image_url: p.image_url || (base && base.image_url) || '',
+              url: p.url || (base && base.url) || '',
+              supermarket: myStore,
+              competitors: competitors,
+              histories: base ? base.histories : null,
+              history: myHist,
+              history_stats: myStats,
+              history_supermarket: myStore,
+              audit: (base && normSuper(base.supermarket) === normSuper(myStore)) ? (base.audit || {}) : {}
+            };
+          } else {
+            found = findInByEan(id);
+          }
+
           if (found) {
             return new Response(JSON.stringify(found), { status: 200, headers: {'Content-Type': 'application/json'} });
           }
@@ -2208,14 +2295,53 @@
         if (path.includes('/history') && path.startsWith('/api/products/')) {
           const parts = path.split('/');
           const id = decodeURIComponent(parts[3] || '');
+          const reqSuper = params.get('supermarket') || '';
+
           if (!staticCache.byEan) {
             const r = await originalFetch(dataPrefix + 'products_by_ean.json');
             staticCache.byEan = await r.json();
           }
-          const prod = staticCache.byEan[id];
-          const hist = (prod && prod.history) ? prod.history : [];
-          const stats = (prod && prod.history_stats) ? prod.history_stats : {};
-          return new Response(JSON.stringify({ history: hist, stats: stats }), { status: 200, headers: {'Content-Type': 'application/json'} });
+          let prod = findInByEan(id);
+          if (!prod) {
+            let p = null;
+            if (staticCache.superProducts) {
+              for (const slug of Object.keys(staticCache.superProducts)) {
+                p = staticCache.superProducts[slug].find(x => String(x.id) === String(id));
+                if (p) break;
+              }
+            }
+            if (!p && staticCache.products) {
+              p = staticCache.products.find(x => String(x.id) === String(id));
+            }
+            if (p && p.ean) {
+              prod = findInByEan(p.ean);
+            }
+          }
+
+          let hist = [];
+          let stats = {};
+          let targetSuper = reqSuper || (prod && (prod.history_supermarket || prod.supermarket)) || 'La Gallega';
+
+          if (prod && prod.histories) {
+            const h = matchSuperKey(prod.histories, targetSuper, null);
+            if (h && h.history && h.history.length > 0) {
+              hist = h.history;
+              stats = h.stats || {};
+            }
+          }
+
+          if (!hist.length && prod) {
+            if (normSuper(targetSuper) === normSuper(prod.history_supermarket || prod.supermarket || 'La Gallega')) {
+              hist = prod.history || [];
+              stats = prod.history_stats || {};
+            }
+          }
+
+          return new Response(JSON.stringify({
+            supermarket: targetSuper,
+            history: hist,
+            stats: stats
+          }), { status: 200, headers: {'Content-Type': 'application/json'} });
         }
 
         // 9. Comparator products: /api/comparator/products
@@ -5501,8 +5627,14 @@
     }
 
     function initOrUpdateModalHistoryChart(superm, hist) {
-      if (!hist || hist.length <= 1) return;
-      const chartColor = SUPER_CHART_COLORS[superm] || SUPER_CHART_COLORS['La Gallega'];
+      if (!hist || hist.length <= 1) {
+        if (state.charts.modalHistory) {
+          state.charts.modalHistory.destroy();
+          state.charts.modalHistory = null;
+        }
+        return;
+      }
+      const chartColor = matchSuperKey(SUPER_CHART_COLORS, superm, SUPER_CHART_COLORS['La Gallega']) || SUPER_CHART_COLORS['La Gallega'];
       setTimeout(() => {
         const canvas = document.getElementById('productHistoryCanvas');
         if (canvas) {
@@ -5553,7 +5685,7 @@
       if (!container) return;
 
       document.querySelectorAll('.modal-super-row').forEach(el => {
-        if (el.getAttribute('data-super') === supermarketName) {
+        if (normSuper(el.getAttribute('data-super')) === normSuper(supermarketName)) {
           el.classList.add('ring-2', 'ring-brand-500', 'bg-brand-50/60');
         } else {
           el.classList.remove('ring-2', 'ring-brand-500', 'bg-brand-50/60');
@@ -5602,9 +5734,20 @@
         const superm = p.supermarket || 'La Gallega';
         const inBasket = state.basket.includes(p.id);
         const comps = p.competitors || [];
-        const hist = p.history || [];
-        const stats = p.history_stats || {};
+        let hist = p.history || [];
+        let stats = p.history_stats || {};
         const audit = p.audit || {};
+
+        if (p.histories) {
+          const matched = matchSuperKey(p.histories, superm, null);
+          if (matched && matched.history && matched.history.length > 0) {
+            hist = matched.history;
+            stats = matched.stats || {};
+          } else if (normSuper(superm) !== normSuper(p.history_supermarket || p.supermarket)) {
+            hist = [];
+            stats = {};
+          }
+        }
 
         body.innerHTML = `
           <div class="flex gap-4">

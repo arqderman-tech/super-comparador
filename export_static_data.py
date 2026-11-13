@@ -131,21 +131,90 @@ def run_export():
         if isinstance(a, dict) and 'id' in a:
             target_ids.add(a['id'])
 
-    print(f"   -> {len(target_ids)} productos con comparativa multitienda completa")
+    # Pre-cargar historiales en bloque de price_history para todos los target EANs
+    c.execute("SELECT DISTINCT ean FROM competitor_prices WHERE ean != ''")
+    target_eans = [r[0] for r in c.fetchall()]
+    print(f"   -> Pre-cargando histórico multitienda para {len(target_eans)} códigos EAN...")
+
+    c.execute("CREATE TEMP TABLE IF NOT EXISTS tmp_eans (ean TEXT PRIMARY KEY)")
+    c.execute("DELETE FROM tmp_eans")
+    c.executemany("INSERT OR IGNORE INTO tmp_eans VALUES (?)", [(e,) for e in target_eans])
+
+    c.execute("""
+        SELECT ph.ean, ph.supermarket_id, ph.fecha, ph.precio
+        FROM price_history ph
+        JOIN tmp_eans t ON ph.ean = t.ean
+        ORDER BY ph.fecha ASC
+    """)
+    bulk_history = {}
+    sid_to_super = {0: "La Gallega", 1: "Coto", 2: "Carrefour", 3: "La Reina", 4: "Jumbo", 5: "La Anónima"}
+    for ean_val, sid, fecha, precio in c.fetchall():
+        s_name = sid_to_super.get(sid, "La Gallega")
+        f_str = str(fecha)
+        f_fmt = f"{f_str[:4]}-{f_str[4:6]}-{f_str[6:]}" if len(f_str) == 8 else f_str
+        bulk_history.setdefault(ean_val, {}).setdefault(s_name, []).append({
+            'date': f_fmt,
+            'price': float(precio)
+        })
+
     ean_dict = {}
     
     for pid in target_ids:
         try:
             detail = server.api_product_detail(pid)
-            ean_dict[str(pid)] = detail
-            if detail.get('ean'):
-                clean_ean = str(detail['ean']).strip()
-                if clean_ean:
-                    ean_dict[clean_ean] = detail
-                    if len(clean_ean) == 12:
-                        ean_dict['0' + clean_ean] = detail
-                    elif len(clean_ean) == 13 and clean_ean.startswith('0'):
-                        ean_dict[clean_ean.lstrip('0')] = detail
+            ean_val = detail.get('ean')
+
+            # Adjuntar historias por supermercado (con muestreo de 30 puntos para mantener archivo ~35MB)
+            histories = {}
+            if ean_val and ean_val in bulk_history:
+                for s_name, pts in bulk_history[ean_val].items():
+                    if pts:
+                        prices = [p['price'] for p in pts]
+                        sampled_pts = pts
+                        if len(pts) > 30:
+                            step = len(pts) / 28.0
+                            sampled_pts = [pts[0]] + [pts[int(i * step)] for i in range(1, 28)] + [pts[-1]]
+                        histories[s_name] = {
+                            'supermarket': s_name,
+                            'history': sampled_pts,
+                            'stats': {
+                                'first_date': pts[0]['date'],
+                                'last_date': pts[-1]['date'],
+                                'total_points': len(pts),
+                                'first_price': prices[0],
+                                'current_price': prices[-1],
+                                'min_price': min(prices),
+                                'max_price': max(prices),
+                                'avg_price': round(sum(prices) / len(prices), 2),
+                                'inflation_pct': round(((prices[-1] - prices[0]) / prices[0]) * 100, 1) if prices[0] > 0 else 0
+                            }
+                        }
+
+            if "La Gallega" not in histories and detail.get('history'):
+                g_pts = detail.get('history', [])
+                if len(g_pts) > 30:
+                    step = len(g_pts) / 28.0
+                    sampled_g = [g_pts[0]] + [g_pts[int(i * step)] for i in range(1, 28)] + [g_pts[-1]]
+                else:
+                    sampled_g = g_pts
+                histories["La Gallega"] = {
+                    'supermarket': "La Gallega",
+                    'history': sampled_g,
+                    'stats': detail.get('history_stats', {})
+                }
+
+            if detail.get('history') and len(detail['history']) > 30:
+                dh = detail['history']
+                step = len(dh) / 28.0
+                detail['history'] = [dh[0]] + [dh[int(i * step)] for i in range(1, 28)] + [dh[-1]]
+
+            detail['histories'] = histories
+
+            clean_ean = str(ean_val).strip() if ean_val else ''
+            if clean_ean:
+                ean_dict[clean_ean] = detail
+            else:
+                ean_dict[str(pid)] = detail
         except Exception as e:
             pass
 
