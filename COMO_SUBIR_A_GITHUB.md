@@ -21,13 +21,9 @@ Todo el proyecto ya está preparado, configurado y listo para ser **100% autóno
 Abrí la consola de PowerShell y ejecutá:
 
 ```powershell
-cd "C:\Users\usuario\OneDrive - Depaoli Trosce\Aplicaciones\APLICACIONES FUNCIONALES\super-comparador-github"
+cd "C:\Users\marti\OneDrive - Depaoli Trosce\Aplicaciones\APLICACIONES FUNCIONALES\super-comparador-github"
 
-# Vincular con tu repositorio de GitHub
-git remote add origin https://github.com/arqderman-tech/super-comparador.git
-
-# Subir a la rama main
-git branch -M main
+# El origen ya quedó pre-vinculado, sólo necesitás empujar a main:
 git push -u origin main
 ```
 
