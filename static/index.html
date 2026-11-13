@@ -2118,7 +2118,34 @@
             const r = await originalFetch(dataPrefix + 'products_by_ean.json');
             staticCache.byEan = await r.json();
           }
-          const found = staticCache.byEan[ean] || staticCache.byEan[ean.replace(/^0+/, '')] || staticCache.byEan['0' + ean];
+          let found = staticCache.byEan[ean] || staticCache.byEan[ean.replace(/^0+/, '')] || staticCache.byEan['0' + ean];
+          if (!found) {
+            if (!staticCache.products) {
+              const rp = await originalFetch(dataPrefix + 'products.json');
+              staticCache.products = await rp.json();
+            }
+            const p = staticCache.products.find(x => x.ean === ean || x.ean === ean.replace(/^0+/, '') || ('0' + x.ean) === ean);
+            if (p) {
+              found = {
+                id: p.id,
+                ean: p.ean || ean,
+                name: p.name,
+                category: p.category,
+                brand: p.brand,
+                price_regular: p.price_regular || 0,
+                price_promo: p.price_promo || 0,
+                is_promo: p.is_promo || 0,
+                discount_pct: p.discount_pct || 0,
+                image_url: p.image_url || '',
+                url: p.url || '',
+                supermarket: p.supermarket || 'La Gallega',
+                competitors: [],
+                history: [],
+                history_stats: {},
+                audit: {}
+              };
+            }
+          }
           if (found) {
             return new Response(JSON.stringify(found), { status: 200, headers: {'Content-Type': 'application/json'} });
           } else {

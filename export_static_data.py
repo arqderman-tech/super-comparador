@@ -66,19 +66,29 @@ def run_export():
     rows = c.fetchall()
     all_prods = [dict(r) for r in rows]
     with open(os.path.join(DATA_DIR, "products.json"), "w", encoding="utf-8") as f:
-        json.dump(all_prods, f, ensure_ascii=False)
+        json.dump(all_prods, f, ensure_ascii=False, separators=(',', ':'))
     print(f"   -> {len(all_prods)} productos exportados")
 
     # 7. Diccionario de productos completos por EAN e ID (para escáner en vivo y fichas)
     print("7. Exportando products_by_ean.json (Fichas completas, comparativa multitienda e historial)...")
+    c.execute("SELECT DISTINCT product_id FROM competitor_prices")
+    target_ids = set(r[0] for r in c.fetchall())
+    for d in deals:
+        if isinstance(d, dict) and 'id' in d:
+            target_ids.add(d['id'])
+    for a in audit:
+        if isinstance(a, dict) and 'id' in a:
+            target_ids.add(a['id'])
+
+    print(f"   -> {len(target_ids)} productos con comparativa multitienda completa")
     ean_dict = {}
-    for p in all_prods:
-        pid = p['id']
+    
+    for pid in target_ids:
         try:
             detail = server.api_product_detail(pid)
             ean_dict[str(pid)] = detail
-            if p.get('ean'):
-                clean_ean = str(p['ean']).strip()
+            if detail.get('ean'):
+                clean_ean = str(detail['ean']).strip()
                 if clean_ean:
                     ean_dict[clean_ean] = detail
                     if len(clean_ean) == 12:
@@ -89,8 +99,8 @@ def run_export():
             pass
 
     with open(os.path.join(DATA_DIR, "products_by_ean.json"), "w", encoding="utf-8") as f:
-        json.dump(ean_dict, f, ensure_ascii=False)
-    print(f"   -> {len(ean_dict)} claves indexadas por código de barras")
+        json.dump(ean_dict, f, ensure_ascii=False, separators=(',', ':'))
+    print(f"   -> {len(ean_dict)} claves indexadas en products_by_ean.json")
 
     conn.close()
 

@@ -39,6 +39,10 @@ jobs:
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
+      - name: 🧩 Ensamblar base de datos SQLite
+        run: |
+          python db_split.py ensure
+
       - name: 📈 Actualizar historial de precios de GALLEBOT
         run: |
           python update_history.py || echo "Aviso en update_history.py"
@@ -54,19 +58,19 @@ jobs:
           python scraper_laanonima.py || echo "Aviso La Anónima"
           python scraper_reina.py || echo "Aviso La Reina"
 
-      - name: 🗜️ Regenerar base seed optimizada (<30MB)
-        run: |
-          python export_seed.py
-
       - name: 🌐 Generar datos estáticos para GitHub Pages
         run: |
           python export_static_data.py
+
+      - name: 🧩 Particionar base completa para GitHub (<100MB por bloque)
+        run: |
+          python db_split.py split
 
       - name: 💾 Guardar y comitear datos actualizados en el repositorio
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add database.db static/data/
+          git add database.db.part* static/data/
           git diff --staged --quiet || (git commit -m "chore(auto): actualización diaria de precios [skip ci]" && git push)
 
       - name: 🚀 Configurar GitHub Pages
