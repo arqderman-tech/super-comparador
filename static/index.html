@@ -2077,6 +2077,32 @@
           return fallback;
         }
 
+        async function ensureByEanLoaded() {
+          if (staticCache.byEan) return staticCache.byEan;
+          if (!staticCache.byEanPromise) {
+            staticCache.byEanPromise = (async () => {
+              try {
+                const r = await originalFetch(dataPrefix + 'products_by_ean.json');
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const data = await r.json();
+                staticCache.byEan = data || {};
+                staticCache.byId = {};
+                for (const item of Object.values(staticCache.byEan)) {
+                  if (item && item.id != null) {
+                    staticCache.byId[String(item.id)] = item;
+                  }
+                }
+                return staticCache.byEan;
+              } catch(e) {
+                console.error('Error fetching products_by_ean.json:', e);
+                staticCache.byEanPromise = null;
+                throw e;
+              }
+            })();
+          }
+          return staticCache.byEanPromise;
+        }
+
         function findInByEan(key) {
           if (!staticCache.byEan || !key) return null;
           const s = String(key).trim();
@@ -2084,6 +2110,7 @@
           return staticCache.byEan[s] || 
                  staticCache.byEan[s.replace(/^0+/, '')] || 
                  staticCache.byEan['0' + s] || 
+                 (staticCache.byId && staticCache.byId[s]) ||
                  null;
         }
 
@@ -2154,36 +2181,39 @@
         // 6. Barcode Scanner lookup: /api/products/by-ean/{ean}
         if (path.startsWith('/api/products/by-ean/')) {
           const ean = decodeURIComponent(path.replace('/api/products/by-ean/', '')).trim();
-          if (!staticCache.byEan) {
-            const r = await originalFetch(dataPrefix + 'products_by_ean.json');
-            staticCache.byEan = await r.json();
-          }
+          try {
+            await ensureByEanLoaded();
+          } catch(e) {}
           let found = findInByEan(ean);
           if (!found) {
             if (!staticCache.products) {
-              const rp = await originalFetch(dataPrefix + 'products.json');
-              staticCache.products = await rp.json();
+              try {
+                const rp = await originalFetch(dataPrefix + 'products.json');
+                if (rp.ok) staticCache.products = await rp.json();
+              } catch(e) {}
             }
-            const p = staticCache.products.find(x => x.ean === ean || x.ean === ean.replace(/^0+/, '') || ('0' + x.ean) === ean);
-            if (p) {
-              found = {
-                id: p.id,
-                ean: p.ean || ean,
-                name: p.name,
-                category: p.category,
-                brand: p.brand,
-                price_regular: p.price_regular || 0,
-                price_promo: p.price_promo || 0,
-                is_promo: p.is_promo || 0,
-                discount_pct: p.discount_pct || 0,
-                image_url: p.image_url || '',
-                url: p.url || '',
-                supermarket: p.supermarket || 'La Gallega',
-                competitors: [],
-                history: [],
-                history_stats: {},
-                audit: {}
-              };
+            if (staticCache.products) {
+              const p = staticCache.products.find(x => x.ean === ean || x.ean === ean.replace(/^0+/, '') || ('0' + x.ean) === ean || String(x.id) === ean);
+              if (p) {
+                found = {
+                  id: p.id,
+                  ean: p.ean || ean,
+                  name: p.name,
+                  category: p.category,
+                  brand: p.brand,
+                  price_regular: p.price_regular || 0,
+                  price_promo: p.price_promo || 0,
+                  is_promo: p.is_promo || 0,
+                  discount_pct: p.discount_pct || 0,
+                  image_url: p.image_url || '',
+                  url: p.url || '',
+                  supermarket: p.supermarket || 'La Gallega',
+                  competitors: [],
+                  history: [],
+                  history_stats: {},
+                  audit: {}
+                };
+              }
             }
           }
           if (found) {
@@ -2196,10 +2226,9 @@
         // 7. Product detail: /api/products/{id}
         if (path.startsWith('/api/products/') && !path.includes('/history')) {
           const id = decodeURIComponent(path.replace('/api/products/', '')).trim();
-          if (!staticCache.byEan) {
-            const r = await originalFetch(dataPrefix + 'products_by_ean.json');
-            staticCache.byEan = await r.json();
-          }
+          try {
+            await ensureByEanLoaded();
+          } catch(e) {}
 
           let p = null;
           if (staticCache.superProducts) {
@@ -2215,7 +2244,7 @@
           let found = null;
           if (p) {
             const cleanEan = (p.ean || '').trim();
-            const base = cleanEan ? findInByEan(cleanEan) : null;
+            const base = cleanEan ? findInByEan(cleanEan) : (staticCache.byId ? staticCache.byId[String(p.id)] : null);
             const myStore = p.supermarket || (base && base.supermarket) || 'La Gallega';
 
             let competitors = [];
@@ -2282,7 +2311,7 @@
               audit: (base && normSuper(base.supermarket) === normSuper(myStore)) ? (base.audit || {}) : {}
             };
           } else {
-            found = findInByEan(id);
+            found = (staticCache.byId && staticCache.byId[String(id)]) || findInByEan(id);
           }
 
           if (found) {
@@ -2297,11 +2326,10 @@
           const id = decodeURIComponent(parts[3] || '');
           const reqSuper = params.get('supermarket') || '';
 
-          if (!staticCache.byEan) {
-            const r = await originalFetch(dataPrefix + 'products_by_ean.json');
-            staticCache.byEan = await r.json();
-          }
-          let prod = findInByEan(id);
+          try {
+            await ensureByEanLoaded();
+          } catch(e) {}
+          let prod = (staticCache.byId && staticCache.byId[String(id)]) || findInByEan(id);
           if (!prod) {
             let p = null;
             if (staticCache.superProducts) {
@@ -2313,8 +2341,9 @@
             if (!p && staticCache.products) {
               p = staticCache.products.find(x => String(x.id) === String(id));
             }
-            if (p && p.ean) {
-              prod = findInByEan(p.ean);
+            if (p) {
+              const cleanEan = (p.ean || '').trim();
+              prod = cleanEan ? findInByEan(cleanEan) : (staticCache.byId ? staticCache.byId[String(p.id)] : null);
             }
           }
 
@@ -5721,15 +5750,48 @@
     window.loadModalSupermarketHistory = loadModalSupermarketHistory;
 
     // Product Detail Modal
-    async function openProductDetail(id) {
+    async function openProductDetail(idOrProduct) {
       const modal = document.getElementById('product-modal');
       const body = document.getElementById('modal-body');
+      if (!modal || !body) return;
       modal.classList.remove('hidden');
-      body.innerHTML = '<div class="py-8 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando información...</div>';
+
+      let p = null;
+      if (idOrProduct && typeof idOrProduct === 'object' && idOrProduct.id) {
+        p = idOrProduct;
+      } else {
+        const id = String(idOrProduct).trim();
+        body.innerHTML = '<div class="py-8 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando información...</div>';
+
+        try {
+          const res = await fetch(`/api/products/${encodeURIComponent(id)}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          p = await res.json();
+        } catch (err) {
+          console.error('Error product detail:', err);
+          body.innerHTML = `
+            <div class="py-8 text-center space-y-3">
+              <i class="fa-solid fa-circle-exclamation text-rose-500 text-3xl"></i>
+              <p class="font-bold text-slate-800 text-sm">No se pudo cargar la información de este producto.</p>
+              <button onclick="closeProductModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Cerrar</button>
+            </div>
+          `;
+          return;
+        }
+      }
+
+      if (!p || p.detail) {
+        body.innerHTML = `
+          <div class="py-8 text-center space-y-3">
+            <i class="fa-solid fa-circle-exclamation text-rose-500 text-3xl"></i>
+            <p class="font-bold text-slate-800 text-sm">Producto no encontrado.</p>
+            <button onclick="closeProductModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Cerrar</button>
+          </div>
+        `;
+        return;
+      }
 
       try {
-        const res = await fetch(`/api/products/${id}`);
-        const p = await res.json();
 
         const superm = p.supermarket || 'La Gallega';
         const inBasket = state.basket.includes(p.id);
@@ -5902,7 +5964,14 @@
         initOrUpdateModalHistoryChart(superm, hist);
 
       } catch (err) {
-        console.error('Error product detail:', err);
+        console.error('Error rendering product detail:', err);
+        body.innerHTML = `
+          <div class="py-8 text-center space-y-3">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-3xl"></i>
+            <p class="font-bold text-slate-800 text-sm">Error al procesar la ficha del producto.</p>
+            <button onclick="closeProductModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Cerrar</button>
+          </div>
+        `;
       }
     }
 
@@ -7003,8 +7072,8 @@
         saveRecentScan(product);
         renderScannedProduct(product);
 
-        // Open modal popup automatically
-        openProductDetail(product.id);
+        // Open modal popup automatically with the complete product details
+        openProductDetail(product);
 
         showToast(`¡Código escaneado: ${product.name}!`);
 
@@ -7021,9 +7090,24 @@
 
       const inBasket = state.basket.includes(p.id);
       const comps = p.competitors || [];
-      const hist = p.history || [];
-      const stats = p.history_stats || {};
+      let hist = p.history || [];
+      let stats = p.history_stats || {};
       const audit = p.audit || {};
+
+      if (p.histories && (!hist.length || !stats.total_points)) {
+        const superm = p.supermarket || 'La Gallega';
+        const matched = matchSuperKey(p.histories, superm, null);
+        if (matched && matched.history && matched.history.length > 0) {
+          hist = matched.history;
+          stats = matched.stats || {};
+        } else {
+          const firstH = Object.values(p.histories)[0];
+          if (firstH && firstH.history && firstH.history.length > 0) {
+            hist = firstH.history;
+            stats = firstH.stats || {};
+          }
+        }
+      }
 
       const allStores = [{ name: p.supermarket || 'La Gallega', price: p.price_promo, isPromo: p.is_promo }];
       comps.forEach(c => {
@@ -7218,7 +7302,7 @@
         `}
 
         <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-          <button onclick="openProductDetail('${p.id}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+          <button onclick="openProductDetail(state.currentScannedProduct || '${p.id}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Ficha Completa
           </button>
 
