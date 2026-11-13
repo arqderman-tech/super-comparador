@@ -2019,9 +2019,36 @@
     // State management
 
     const isGitHubPages = location.hostname.endsWith('github.io') || location.protocol === 'file:';
+    const dataPrefix = location.pathname.includes('/static/') ? 'data/' : (isGitHubPages ? 'data/' : '/data/');
+
+    function normSuper(s) {
+      if (!s) return 'lagallega';
+      const n = String(s).toLowerCase().replace(/[^a-z]/g, '');
+      if (n.includes('gallega')) return 'lagallega';
+      if (n.includes('coto')) return 'coto';
+      if (n.includes('carrefour')) return 'carrefour';
+      if (n.includes('reina')) return 'lareina';
+      if (n.includes('jumbo')) return 'jumbo';
+      if (n.includes('anonima')) return 'laanonima';
+      return n;
+    }
+    window.normSuper = normSuper;
+
+    function matchSuperKey(dict, superm, fallback = null) {
+      if (!dict || typeof dict !== 'object') return fallback;
+      const target = normSuper(superm);
+      for (const k of Object.keys(dict)) {
+        if (normSuper(k) === target) return dict[k];
+      }
+      return fallback;
+    }
+    window.matchSuperKey = matchSuperKey;
+
     let staticCache = {
       products: null,
       byEan: null,
+      byId: null,
+      byEanPromise: null,
       stats: null,
       categories: null,
       deals: null,
@@ -2030,6 +2057,46 @@
     };
 
     const originalFetch = window.fetch;
+
+    async function ensureByEanLoaded() {
+      if (staticCache.byEan) return staticCache.byEan;
+      if (!staticCache.byEanPromise) {
+        staticCache.byEanPromise = (async () => {
+          try {
+            const r = await originalFetch(dataPrefix + 'products_by_ean.json');
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const data = await r.json();
+            staticCache.byEan = data || {};
+            staticCache.byId = {};
+            for (const item of Object.values(staticCache.byEan)) {
+              if (item && item.id != null) {
+                staticCache.byId[String(item.id)] = item;
+              }
+            }
+            return staticCache.byEan;
+          } catch(e) {
+            console.error('Error fetching products_by_ean.json:', e);
+            staticCache.byEanPromise = null;
+            throw e;
+          }
+        })();
+      }
+      return staticCache.byEanPromise;
+    }
+    window.ensureByEanLoaded = ensureByEanLoaded;
+
+    function findInByEan(key) {
+      if (!staticCache.byEan || !key) return null;
+      const s = String(key).trim();
+      if (!s) return null;
+      return staticCache.byEan[s] || 
+             staticCache.byEan[s.replace(/^0+/, '')] || 
+             staticCache.byEan['0' + s] || 
+             (staticCache.byId && staticCache.byId[s]) ||
+             null;
+    }
+    window.findInByEan = findInByEan;
+
     window.fetch = async function(url, options) {
       const urlStr = typeof url === 'string' ? url : (url.url || '');
       
@@ -2055,67 +2122,6 @@
         const parsed = new URL(urlStr, location.origin);
         const path = parsed.pathname;
         const params = parsed.searchParams;
-
-        function normSuper(s) {
-          if (!s) return 'lagallega';
-          const n = s.toLowerCase().replace(/[^a-z]/g, '');
-          if (n.includes('gallega')) return 'lagallega';
-          if (n.includes('coto')) return 'coto';
-          if (n.includes('carrefour')) return 'carrefour';
-          if (n.includes('reina')) return 'lareina';
-          if (n.includes('jumbo')) return 'jumbo';
-          if (n.includes('anonima')) return 'laanonima';
-          return n;
-        }
-
-        function matchSuperKey(dict, superm, fallback = null) {
-          if (!dict || typeof dict !== 'object') return fallback;
-          const target = normSuper(superm);
-          for (const k of Object.keys(dict)) {
-            if (normSuper(k) === target) return dict[k];
-          }
-          return fallback;
-        }
-
-        async function ensureByEanLoaded() {
-          if (staticCache.byEan) return staticCache.byEan;
-          if (!staticCache.byEanPromise) {
-            staticCache.byEanPromise = (async () => {
-              try {
-                const r = await originalFetch(dataPrefix + 'products_by_ean.json');
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                const data = await r.json();
-                staticCache.byEan = data || {};
-                staticCache.byId = {};
-                for (const item of Object.values(staticCache.byEan)) {
-                  if (item && item.id != null) {
-                    staticCache.byId[String(item.id)] = item;
-                  }
-                }
-                return staticCache.byEan;
-              } catch(e) {
-                console.error('Error fetching products_by_ean.json:', e);
-                staticCache.byEanPromise = null;
-                throw e;
-              }
-            })();
-          }
-          return staticCache.byEanPromise;
-        }
-
-        function findInByEan(key) {
-          if (!staticCache.byEan || !key) return null;
-          const s = String(key).trim();
-          if (!s) return null;
-          return staticCache.byEan[s] || 
-                 staticCache.byEan[s.replace(/^0+/, '')] || 
-                 staticCache.byEan['0' + s] || 
-                 (staticCache.byId && staticCache.byId[s]) ||
-                 null;
-        }
-
-        // Path normalization for relative deployment on GitHub Pages
-        const dataPrefix = location.pathname.includes('/static/') ? 'data/' : (isGitHubPages ? 'data/' : '/data/');
 
         // 1. Stats
         if (path === '/api/stats') {
@@ -5794,7 +5800,7 @@
       try {
 
         const superm = p.supermarket || 'La Gallega';
-        const inBasket = state.basket.includes(p.id);
+        const inBasket = (state.basket || []).includes(p.id) || (state.basket || []).includes(String(p.id));
         const comps = p.competitors || [];
         let hist = p.history || [];
         let stats = p.history_stats || {};
@@ -5969,6 +5975,7 @@
           <div class="py-8 text-center space-y-3">
             <i class="fa-solid fa-triangle-exclamation text-amber-500 text-3xl"></i>
             <p class="font-bold text-slate-800 text-sm">Error al procesar la ficha del producto.</p>
+            <p class="text-xs text-slate-400 font-mono">${(err && err.message) || ''}</p>
             <button onclick="closeProductModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Cerrar</button>
           </div>
         `;
