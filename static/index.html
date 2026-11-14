@@ -7,6 +7,9 @@
   <meta charset="UTF-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 
   <title>SuperComparador - Análisis e Indexación de Precios de Supermercados</title>
 
@@ -1878,6 +1881,14 @@
         const parsed = new URL(urlStr, location.origin);
         const path = parsed.pathname;
         const params = parsed.searchParams;
+
+        // 0. Scraper status & control (GitHub Pages mock)
+        if (path === '/api/scraper/status') {
+          return new Response(JSON.stringify({ is_running: false, message: 'Inactivo', total_items_scraped: 0 }), { status: 200, headers: {'Content-Type': 'application/json'} });
+        }
+        if (path === '/api/scraper/start') {
+          return new Response(JSON.stringify({ status: 'ok', message: 'Ejecución en la nube no disponible desde GitHub Pages estático.' }), { status: 200, headers: {'Content-Type': 'application/json'} });
+        }
 
         // 1. Stats
         if (path === '/api/stats') {
