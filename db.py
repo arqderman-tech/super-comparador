@@ -318,16 +318,8 @@ def get_supermarket_updates(conn=None) -> Dict[str, Any]:
     c.execute("SELECT MAX(created_at) FROM scrape_logs")
     last_scrape_log = c.fetchone()[0]
 
-    c.execute("SELECT MAX(fecha) FROM price_history WHERE supermarket_id = 0")
-    gallega_hist = c.fetchone()[0]
-    gallega_hist_dt = None
-    if gallega_hist:
-        try:
-            s_gh = str(gallega_hist)
-            if len(s_gh) == 8:
-                gallega_hist_dt = f"{s_gh[:4]}-{s_gh[4:6]}-{s_gh[6:]} 00:00:00"
-        except Exception:
-            pass
+    c.execute("SELECT supermarket_id, MAX(fecha) FROM price_history GROUP BY supermarket_id")
+    hist_updates = {row[0]: row[1] for row in c.fetchall()}
 
     supermarkets = ['La Gallega', 'Coto', 'Carrefour', 'La Reina', 'Jumbo', 'La Anónima']
     updates = {}
@@ -337,11 +329,13 @@ def get_supermarket_updates(conn=None) -> Dict[str, Any]:
             candidates.append(str(prod_updates[sm]))
         if sm in comp_updates and comp_updates[sm]:
             candidates.append(str(comp_updates[sm]))
-        if sm == 'La Gallega':
-            if last_scrape_log:
-                candidates.append(str(last_scrape_log))
-            if gallega_hist_dt:
-                candidates.append(gallega_hist_dt)
+        if sm == 'La Gallega' and last_scrape_log:
+            candidates.append(str(last_scrape_log))
+        sid = SUPERMARKET_CODES.get(sm)
+        if sid is not None and sid in hist_updates and hist_updates[sid]:
+            s_h = str(hist_updates[sid])
+            if len(s_h) == 8:
+                candidates.append(f"{s_h[:4]}-{s_h[4:6]}-{s_h[6:]} 00:00:00")
         updates[sm] = max(candidates) if candidates else None
 
     if close_after:
