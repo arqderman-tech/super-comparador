@@ -17,7 +17,46 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  scrape-and-update:
+  scrape-laanonima-pi:
+    name: 🛒 Relevar La Anónima (Raspberry Pi Rosario)
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 25
+    continue-on-error: true # Si la Pi está apagada o sin internet, no detiene el workflow general
+
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 📦 Instalar dependencias para La Anónima
+        run: |
+          python3 -m pip install --upgrade pip --break-system-packages 2>/dev/null || python3 -m pip install --upgrade pip || true
+          python3 -m pip install requests beautifulsoup4 curl_cffi --break-system-packages 2>/dev/null || python3 -m pip install requests beautifulsoup4 curl_cffi || true
+
+      - name: 🧩 Ensamblar base de datos SQLite
+        run: |
+          python3 db_split.py ensure
+
+      - name: 🛒 Ejecutar Scraper de La Anónima (IP Residencial)
+        run: |
+          python3 scraper_laanonima.py
+
+      - name: 🧩 Particionar base completa para GitHub (<100MB por bloque)
+        run: |
+          python3 db_split.py split
+
+      - name: 💾 Guardar y sincronizar avance de La Anónima
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add database.db.part*
+          git diff --staged --quiet || (git commit -m "chore(auto): actualización diaria La Anónima desde Raspberry Pi [skip ci]" && git push)
+
+  scrape-cloud-and-deploy:
+    name: ☁️ Relevar Multitienda Cloud y Desplegar Web
+    needs: scrape-laanonima-pi
+    if: always() # Se ejecuta siempre, incluso si la Pi fallara o estuviera apagada
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
@@ -25,6 +64,7 @@ jobs:
       - name: 📥 Clonar repositorio
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 1
 
       - name: 🐍 Configurar Python
@@ -47,7 +87,7 @@ jobs:
         run: |
           python update_history.py || echo "Aviso en update_history.py"
 
-      - name: 🛒 Ejecutar Scrapers de Supermercados
+      - name: 🛒 Ejecutar Scrapers de Supermercados Cloud
         run: |
           echo "Ejecutando relevamiento de precios multitienda..."
           python scraper.py || echo "Aviso La Gallega"
@@ -55,7 +95,6 @@ jobs:
           python import_carrefour.py || echo "Aviso Import Carrefour"
           python scraper_coto.py || echo "Aviso COTO"
           python scraper_jumbo.py || echo "Aviso Jumbo"
-          python scraper_laanonima.py || echo "Aviso La Anónima"
           python scraper_reina.py || echo "Aviso La Reina"
 
       - name: 🌐 Generar datos estáticos para GitHub Pages
