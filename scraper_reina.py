@@ -514,15 +514,19 @@ def update_reina_catalog_and_prices(productos, ean_dict=None):
     """, comp_inserts)
     conn.commit()
 
-    # Almacenar histórico de precios de La Reina
+    # Almacenar histórico de precios de La Reina (Catálogo completo con EAN)
     from datetime import datetime
     today_int = int(datetime.now().strftime("%Y%m%d"))
     from db import SUPERMARKET_CODES
     history_inserts = []
-    for item in comp_inserts:
-        ean = item[1]  # ean está en posición 1
-        price = item[3]  # price está en posición 3
-        history_inserts.append((ean, today_int, price, SUPERMARKET_CODES['La Reina']))
+    vistos_reina_hist = set()
+    reina_code = SUPERMARKET_CODES['La Reina']
+    for prod in productos:
+        ean = clean_ean(prod.get("ean"))
+        reina_price = float(prod.get("precio") or prod.get("precio_promo") or 0.0)
+        if ean and reina_price > 0 and ean not in vistos_reina_hist:
+            vistos_reina_hist.add(ean)
+            history_inserts.append((ean, today_int, reina_price, reina_code))
 
     if history_inserts:
         c.executemany("""
@@ -530,7 +534,7 @@ def update_reina_catalog_and_prices(productos, ean_dict=None):
         VALUES (?, ?, ?, ?)
         """, history_inserts)
         conn.commit()
-        print(f"Historico de La Reina guardado: {len(history_inserts):,} registros")
+        print(f"Historico de La Reina guardado: {len(history_inserts):,} registros en price_history")
 
     conn.close()
 

@@ -387,15 +387,19 @@ def import_latest_carrefour(csv_path: Optional[str] = None) -> int:
 
     conn.commit()
 
-    # Almacenar histórico de precios de Carrefour
+    # Almacenar histórico de precios de Carrefour (Catálogo completo con EAN)
     from datetime import datetime
     today_int = int(datetime.now().strftime("%Y%m%d"))
     from db import SUPERMARKET_CODES
     history_inserts = []
-    for item in inserts:
-        ean = item[1]  # ean está en posición 1
-        price = item[3]  # price está en posición 3
-        history_inserts.append((ean, today_int, price, SUPERMARKET_CODES['Carrefour']))
+    vistos_hist = set()
+    carr_code = SUPERMARKET_CODES['Carrefour']
+    for _, row in carrefour_by_ean.iterrows():
+        clean_e = str(row.get('clean_ean') or '').strip()
+        raw_price = float(row.get('precio_actual') or row.get('precio_regular') or 0.0)
+        if clean_e and raw_price > 0 and clean_e not in vistos_hist:
+            vistos_hist.add(clean_e)
+            history_inserts.append((clean_e, today_int, raw_price, carr_code))
 
     if history_inserts:
         c.executemany("""
@@ -403,7 +407,7 @@ def import_latest_carrefour(csv_path: Optional[str] = None) -> int:
         VALUES (?, ?, ?, ?)
         """, history_inserts)
         conn.commit()
-        log.info(f"Historico de Carrefour guardado: {len(history_inserts):,} registros")
+        log.info(f"Historico de Carrefour guardado: {len(history_inserts):,} registros en price_history")
 
     conn.close()
 

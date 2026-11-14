@@ -562,7 +562,11 @@ def update_jumbo_catalog_and_prices(
             promo_detail
         ))
 
-        history_inserts.append((clean_e, today_int, j_price, jumbo_code))
+    # Almacenar histórico diario de Jumbo para TODO el catálogo con EAN
+    for clean_e, j_prod in jumbo_by_ean.items():
+        j_price = float(j_prod.get("price_promo") or j_prod.get("price_regular") or 0.0)
+        if clean_e and j_price > 0:
+            history_inserts.append((clean_e, today_int, j_price, jumbo_code))
 
     log.info(f"Insertando {len(comp_inserts):,} precios coincidentes en 'competitor_prices'...")
     for i in range(0, len(comp_inserts), BATCH_SIZE):

@@ -427,13 +427,19 @@ def update_coto_catalog_and_prices(productos, ean_dict):
     """, comp_inserts)
     conn.commit()
 
-    # Almacenar histórico de precios de COTO
+    # Almacenar histórico de precios de COTO (Catálogo completo con EAN)
     from datetime import datetime
     today_int = int(datetime.now().strftime("%Y%m%d"))
     from db import SUPERMARKET_CODES
     history_inserts = []
-    for ean, coto_price in coincidencias.values():
-        history_inserts.append((ean, today_int, coto_price, SUPERMARKET_CODES['Coto']))
+    vistos_coto_hist = set()
+    coto_code = SUPERMARKET_CODES['Coto']
+    for prod in productos:
+        ean = clean_ean(prod.get("ean"))
+        coto_price = float(prod.get("precio_actual") or prod.get("precio_regular") or 0.0)
+        if ean and coto_price > 0 and ean not in vistos_coto_hist:
+            vistos_coto_hist.add(ean)
+            history_inserts.append((ean, today_int, coto_price, coto_code))
 
     if history_inserts:
         c.executemany("""
@@ -441,7 +447,7 @@ def update_coto_catalog_and_prices(productos, ean_dict):
         VALUES (?, ?, ?, ?)
         """, history_inserts)
         conn.commit()
-        log.info(f"Historico de COTO guardado: {len(history_inserts):,} registros")
+        log.info(f"Historico de COTO guardado: {len(history_inserts):,} registros en price_history")
 
     conn.close()
 

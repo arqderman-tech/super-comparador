@@ -131,8 +131,19 @@ def run_export():
         if isinstance(a, dict) and 'id' in a:
             target_ids.add(a['id'])
 
-    # Pre-cargar historiales en bloque de price_history para todos los target EANs
-    c.execute("SELECT DISTINCT ean FROM competitor_prices WHERE ean != ''")
+    # EANs objetivo:
+    # 1. Todos los EANs compartidos por 2 o más supermercados (comparativas cruzadas multitienda)
+    # 2. Todos los EANs con evolución histórica de precios (múltiples fechas o catálogo con seguimiento)
+    # 3. Todos los EANs en competitor_prices
+    c.execute("""
+        SELECT DISTINCT ean FROM (
+            SELECT ean FROM products WHERE ean != '' AND ean IS NOT NULL GROUP BY ean HAVING COUNT(DISTINCT supermarket) >= 2
+            UNION
+            SELECT ean FROM price_history WHERE ean != '' GROUP BY ean HAVING COUNT(DISTINCT fecha) >= 2
+            UNION
+            SELECT ean FROM competitor_prices WHERE ean != ''
+        )
+    """)
     target_eans = [r[0] for r in c.fetchall()]
     print(f"   -> Pre-cargando histórico multitienda para {len(target_eans)} códigos EAN...")
 
@@ -157,12 +168,31 @@ def run_export():
             'price': float(precio)
         })
 
+    # Asegurar que todos los productos con historial o comparativa estén representados en target_ids
+    c.execute("""
+        SELECT p.id, p.ean, p.supermarket
+        FROM products p
+        JOIN tmp_eans t ON p.ean = t.ean
+        ORDER BY CASE 
+            WHEN p.supermarket = 'La Gallega' THEN 0 
+            WHEN p.supermarket = 'Coto' THEN 1
+            WHEN p.supermarket = 'Carrefour' THEN 2
+            WHEN p.supermarket = 'Jumbo' THEN 3
+            ELSE 4 END
+    """)
+    seen_hist_eans = set()
+    for pid_val, ean_val, super_val in c.fetchall():
+        if ean_val not in seen_hist_eans:
+            seen_hist_eans.add(ean_val)
+            target_ids.add(pid_val)
+
     ean_dict = {}
     
     for pid in target_ids:
         try:
-            detail = server.api_product_detail(pid)
+            detail = server.api_product_detail(pid, fetch_history=False)
             ean_val = detail.get('ean')
+            superm = detail.get('supermarket') or 'La Gallega'
 
             # Adjuntar historias por supermercado (con muestreo de 30 puntos para mantener archivo ~35MB)
             histories = {}
@@ -190,29 +220,25 @@ def run_export():
                             }
                         }
 
-            if "La Gallega" not in histories and detail.get('history'):
-                g_pts = detail.get('history', [])
-                if len(g_pts) > 30:
-                    step = len(g_pts) / 28.0
-                    sampled_g = [g_pts[0]] + [g_pts[int(i * step)] for i in range(1, 28)] + [g_pts[-1]]
-                else:
-                    sampled_g = g_pts
-                histories["La Gallega"] = {
-                    'supermarket': "La Gallega",
-                    'history': sampled_g,
-                    'stats': detail.get('history_stats', {})
-                }
-
-            if detail.get('history') and len(detail['history']) > 30:
-                dh = detail['history']
-                step = len(dh) / 28.0
-                detail['history'] = [dh[0]] + [dh[int(i * step)] for i in range(1, 28)] + [dh[-1]]
+            if superm in histories:
+                detail['history'] = histories[superm]['history']
+                detail['history_stats'] = histories[superm]['stats']
+                detail['history_supermarket'] = superm
+                detail['audit'] = db.audit_product_deal(detail, detail['history_stats'], detail['history'])
+            elif "La Gallega" in histories:
+                detail['history'] = histories["La Gallega"]["history"]
+                detail['history_stats'] = histories["La Gallega"]["stats"]
+                detail['history_supermarket'] = "La Gallega"
+                detail['audit'] = db.audit_product_deal(detail, detail['history_stats'], detail['history'])
 
             detail['histories'] = histories
 
             clean_ean = str(ean_val).strip() if ean_val else ''
             if clean_ean:
-                ean_dict[clean_ean] = detail
+                if clean_ean in ean_dict and ean_dict[clean_ean].get('supermarket') == 'La Gallega' and superm != 'La Gallega':
+                    pass
+                else:
+                    ean_dict[clean_ean] = detail
             else:
                 ean_dict[str(pid)] = detail
         except Exception as e:

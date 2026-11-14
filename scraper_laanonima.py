@@ -598,7 +598,11 @@ def update_laanonima_catalog_and_prices(
             promo_detail
         ))
 
-        history_inserts.append((clean_e, today_int, la_price, la_code))
+    # Almacenar histórico diario de La Anónima para TODO el catálogo con EAN
+    for clean_e, la_prod in laanonima_by_ean.items():
+        la_price = float(la_prod.get("price_promo") or la_prod.get("price_regular") or 0.0)
+        if clean_e and la_price > 0:
+            history_inserts.append((clean_e, today_int, la_price, la_code))
 
     # PROTECCION: Solo reemplazar competitor_prices si se generaron cruces validos
     if comp_inserts:

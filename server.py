@@ -127,7 +127,7 @@ def api_products(
     return results
 
 @app.get("/api/products/{product_id}")
-def api_product_detail(product_id: str):
+def api_product_detail(product_id: str, fetch_history: bool = True):
     conn = get_connection()
     c = conn.cursor()
     c.execute("""
@@ -211,11 +211,17 @@ def api_product_detail(product_id: str):
     
     # Enrich with historical price points and audit verdict for THIS specific supermarket
     superm = product.get('supermarket') or 'La Gallega'
-    hist_res = get_product_history(product.get('ean'), supermarket=superm)
-    product['history'] = hist_res['history']
-    product['history_stats'] = hist_res['stats']
-    product['history_supermarket'] = superm
-    product['audit'] = audit_product_deal(product, hist_res['stats'], hist_res['history'])
+    if fetch_history:
+        hist_res = get_product_history(product.get('ean'), supermarket=superm)
+        product['history'] = hist_res['history']
+        product['history_stats'] = hist_res['stats']
+        product['history_supermarket'] = superm
+        product['audit'] = audit_product_deal(product, hist_res['stats'], hist_res['history'])
+    else:
+        product['history'] = []
+        product['history_stats'] = {}
+        product['history_supermarket'] = superm
+        product['audit'] = {}
     return product
 
 @app.get("/api/products/by-ean/{ean}")
