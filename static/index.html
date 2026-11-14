@@ -2149,6 +2149,8 @@
           let items = Array.isArray(staticCache.comparator) ? [...staticCache.comparator] : (staticCache.comparator.items || []);
           const q = (params.get('q') || params.get('query') || '').toLowerCase().trim();
           const cat = (params.get('category') || '').trim();
+          const competitor = params.get('competitor') || 'all';
+          const sort = params.get('sort') || 'diff_desc';
           const page = parseInt(params.get('page') || '1') || 1;
           const limit = parseInt(params.get('limit') || '250') || 250;
 
@@ -2157,6 +2159,87 @@
           }
           if (cat) {
             items = items.filter(p => p.category === cat);
+          }
+
+          if (competitor && competitor !== 'all') {
+            items = items.filter(p => {
+              const comps = p.competitors || [];
+              const hasCoto = comps.some(c => c.supermarket === 'Coto' && c.price > 0);
+              const hasCarrefour = comps.some(c => c.supermarket === 'Carrefour' && c.price > 0);
+              const hasReina = comps.some(c => c.supermarket === 'La Reina' && c.price > 0);
+              const hasJumbo = comps.some(c => c.supermarket === 'Jumbo' && c.price > 0);
+              const hasLaAnonima = comps.some(c => (c.supermarket === 'La Anónima' || c.supermarket === 'La Anonima') && c.price > 0);
+
+              if (competitor === 'coto') return hasCoto;
+              if (competitor === 'carrefour') return hasCarrefour;
+              if (competitor === 'reina') return hasReina;
+              if (competitor === 'jumbo') return hasJumbo;
+              if (competitor === 'laanonima' || competitor === 'anonima') return hasLaAnonima;
+              if (competitor === 'both') return hasCoto && hasCarrefour;
+              if (competitor === 'all_three') return hasCoto && hasCarrefour && hasReina;
+              if (competitor === 'all_four') return hasCoto && hasCarrefour && hasReina && hasJumbo;
+              if (competitor === 'all_five') return hasCoto && hasCarrefour && hasReina && hasJumbo && hasLaAnonima;
+              return true;
+            });
+          }
+
+          // Sorting
+          if (sort === 'diff_coto') {
+            items.sort((a, b) => {
+              const cA = (a.competitors || []).find(c => c.supermarket === 'Coto');
+              const cB = (b.competitors || []).find(c => c.supermarket === 'Coto');
+              const diffA = cA ? cA.difference_pct : 9999;
+              const diffB = cB ? cB.difference_pct : 9999;
+              return diffA - diffB;
+            });
+          } else if (sort === 'diff_carrefour') {
+            items.sort((a, b) => {
+              const cA = (a.competitors || []).find(c => c.supermarket === 'Carrefour');
+              const cB = (b.competitors || []).find(c => c.supermarket === 'Carrefour');
+              const diffA = cA ? cA.difference_pct : 9999;
+              const diffB = cB ? cB.difference_pct : 9999;
+              return diffA - diffB;
+            });
+          } else if (sort === 'diff_reina') {
+            items.sort((a, b) => {
+              const cA = (a.competitors || []).find(c => c.supermarket === 'La Reina');
+              const cB = (b.competitors || []).find(c => c.supermarket === 'La Reina');
+              const diffA = cA ? cA.difference_pct : 9999;
+              const diffB = cB ? cB.difference_pct : 9999;
+              return diffA - diffB;
+            });
+          } else if (sort === 'diff_jumbo') {
+            items.sort((a, b) => {
+              const cA = (a.competitors || []).find(c => c.supermarket === 'Jumbo');
+              const cB = (b.competitors || []).find(c => c.supermarket === 'Jumbo');
+              const diffA = cA ? cA.difference_pct : 9999;
+              const diffB = cB ? cB.difference_pct : 9999;
+              return diffA - diffB;
+            });
+          } else if (sort === 'diff_laanonima' || sort === 'diff_anonima') {
+            items.sort((a, b) => {
+              const cA = (a.competitors || []).find(c => c.supermarket === 'La Anónima' || c.supermarket === 'La Anonima');
+              const cB = (b.competitors || []).find(c => c.supermarket === 'La Anónima' || c.supermarket === 'La Anonima');
+              const diffA = cA ? cA.difference_pct : 9999;
+              const diffB = cB ? cB.difference_pct : 9999;
+              return diffA - diffB;
+            });
+          } else if (sort === 'diff_gallega') {
+            items.sort((a, b) => {
+              const maxA = Math.max(...(a.competitors || []).map(c => c.difference_pct || -9999), -9999);
+              const maxB = Math.max(...(b.competitors || []).map(c => c.difference_pct || -9999), -9999);
+              return maxB - maxA;
+            });
+          } else if (sort === 'price_asc') {
+            items.sort((a, b) => (a.price_promo || a.price_regular || 0) - (b.price_promo || b.price_regular || 0));
+          } else if (sort === 'price_desc') {
+            items.sort((a, b) => (b.price_promo || b.price_regular || 0) - (a.price_promo || a.price_regular || 0));
+          } else if (sort === 'discount') {
+            items.sort((a, b) => (b.discount_pct || 0) - (a.discount_pct || 0));
+          } else if (sort === 'name') {
+            items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+          } else { // diff_desc
+            items.sort((a, b) => (b.cheaper_diff_pct || 0) - (a.cheaper_diff_pct || 0));
           }
 
           const total = items.length;
@@ -3947,7 +4030,7 @@
 
 
 
-      tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando comparativa de precios...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando comparativa de precios...</td></tr>';
 
 
 
@@ -4049,7 +4132,7 @@
 
         if (!items.length) {
 
-          tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-slate-400">No se encontraron productos comparados con los filtros seleccionados.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-400">No se encontraron productos comparados con los filtros seleccionados.</td></tr>';
 
           return;
 
@@ -4069,6 +4152,8 @@
 
           const jumbo = comps.find(c => c.supermarket === 'Jumbo');
 
+          const laanonima = comps.find(c => c.supermarket === 'La Anónima' || c.supermarket === 'La Anonima');
+
           const pLg = p.price_promo || 0;
 
           const pCoto = coto ? coto.price : 0;
@@ -4078,6 +4163,8 @@
           const pReina = reina ? reina.price : 0;
 
           const pJumbo = jumbo ? jumbo.price : 0;
+
+          const pLaAnonima = laanonima ? laanonima.price : 0;
 
           const winner = p.cheaper_supermarket || 'Desconocido';
 
@@ -4097,7 +4184,7 @@
 
           const isJumboWinner = winner.includes('Jumbo');
 
-          const isLaAnonimaWinner = winner.includes('La Anónima');
+          const isLaAnonimaWinner = winner.includes('La Anónima') || winner.includes('La Anonima');
 
 
 
@@ -4223,7 +4310,7 @@
 
             `;
 
-          } else if (winner === 'La Anónima') {
+          } else if (winner === 'La Anónima' || winner === 'La Anonima') {
 
             badgeHtml = `
 
@@ -5167,7 +5254,7 @@
 
         console.error('Error comparator table:', err);
 
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-6 text-rose-500">Error al cargar datos del comparador.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-6 text-rose-500">Error al cargar datos del comparador.</td></tr>';
 
       }
 
