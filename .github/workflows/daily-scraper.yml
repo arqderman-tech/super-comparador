@@ -2,8 +2,8 @@ name: SuperComparador Daily Scraper & Cloud Sync
 
 on:
   schedule:
-    # Ejecuta automáticamente todos los días a las 08:00 UTC (05:00 AM hora argentina)
-    - cron: '0 8 * * *'
+    # Ejecuta automáticamente todos los días a las 08:17 UTC (05:17 AM hora argentina)
+    - cron: '17 8 * * *'
   workflow_dispatch: # Permite ejecutar manualmente con un clic desde la web de GitHub
 
 # Permisos para actualizar el repositorio y publicar en GitHub Pages

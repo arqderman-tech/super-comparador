@@ -143,7 +143,6 @@
 
               <span class="font-bold text-xl tracking-tight text-slate-900">Super<span class="text-brand-600">Comparador</span></span>
 
-              <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">La Gallega + COTO + Carrefour + La Reina + Jumbo</span>
 
             </div>
 
@@ -179,11 +178,6 @@
 
           </button>
 
-          <button id="nav-analytics" onclick="switchTab('analytics')" class="px-3.5 py-2 text-sm font-semibold rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-
-            <i class="fa-solid fa-chart-pie mr-1.5"></i> Análisis & Gráficos
-
-          </button>
 
           <button id="nav-audit" onclick="switchTab('audit')" class="px-3.5 py-2 text-sm font-semibold rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
 
@@ -203,47 +197,7 @@
 
 
 
-        <!-- Right Quick Actions -->
-
-        <div class="flex items-center space-x-2">
-
-          <!-- Scrape Action Button -->
-
-          <button onclick="triggerScraper()" id="btn-scraper" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 text-white shadow-sm flex items-center transition">
-
-            <i class="fa-solid fa-rotate mr-1.5" id="scraper-icon"></i>
-
-            <span id="scraper-btn-text">Actualizar Precios</span>
-
-          </button>
-
-          <!-- Exports Menu -->
-
-          <div class="relative group">
-
-            <button class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 flex items-center transition">
-
-              <i class="fa-solid fa-download mr-1.5"></i> Exportar
-
-            </button>
-
-            <div class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-xl border border-slate-200 py-1 hidden group-hover:block z-50">
-
-              <a href="/api/export/csv" class="flex items-center px-4 py-2 text-xs text-slate-700 hover:bg-slate-50">
-
-                <i class="fa-solid fa-file-csv text-green-600 mr-2 text-sm"></i> Descargar CSV
-
-              </a>
-
-              <a href="/api/export/json" class="flex items-center px-4 py-2 text-xs text-slate-700 hover:bg-slate-50">
-
-                <i class="fa-solid fa-file-code text-amber-600 mr-2 text-sm"></i> Descargar JSON
-
-              </a>
-
-            </div>
-
-          </div>
+        
 
         </div>
 
@@ -255,22 +209,19 @@
 
 
 
-  <!-- Mobile Bottom Navigation -->
-  <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1.5 flex justify-around items-center shadow-lg">
-    <button id="mobile-nav-catalog" onclick="switchTab('catalog')" class="flex flex-col items-center py-1 px-1.5 text-[11px] font-semibold text-brand-600">
+  <!-- Mobile Bottom Navigation (Mismo ancho y márgenes que los recuadros de arriba) -->
+  <div class="md:hidden fixed bottom-3 left-4 right-4 z-40 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl px-3 py-1.5 flex justify-around items-center shadow-xl shadow-slate-900/10 max-w-7xl mx-auto">
+    <button id="mobile-nav-catalog" onclick="switchTab('catalog')" class="flex flex-col items-center py-1 px-2 text-[11px] font-semibold text-brand-600 transition">
       <i class="fa-solid fa-boxes-stacked text-base mb-0.5"></i> Catálogo
     </button>
-    <button id="mobile-nav-comparator" onclick="switchTab('comparator')" class="flex flex-col items-center py-1 px-1.5 text-[11px] font-medium text-slate-500">
+    <button id="mobile-nav-comparator" onclick="switchTab('comparator')" class="flex flex-col items-center py-1 px-2 text-[11px] font-medium text-slate-500 transition">
       <i class="fa-solid fa-scale-balanced text-base mb-0.5"></i> Comparar
     </button>
-    <button id="mobile-nav-scanner" onclick="switchTab('scanner')" class="relative -top-3 flex flex-col items-center justify-center w-14 h-14 text-white bg-gradient-to-tr from-brand-700 via-pink-600 to-rose-500 rounded-full shadow-lg shadow-pink-500/40 border-2 border-white transform active:scale-90 transition">
-      <i class="fa-solid fa-barcode text-xl mb-0.5"></i>
-      <span class="text-[9px] font-extrabold uppercase tracking-tight">Escanear</span>
+    <button id="mobile-nav-scanner" onclick="switchTab('scanner')" class="relative -top-2 flex flex-col items-center justify-center w-12 h-12 text-white bg-gradient-to-tr from-brand-700 via-pink-600 to-rose-500 rounded-full shadow-lg shadow-pink-500/40 border-2 border-white transform active:scale-90 transition">
+      <i class="fa-solid fa-barcode text-lg mb-0.5"></i>
+      <span class="text-[8px] font-extrabold uppercase tracking-tight">Escanear</span>
     </button>
-    <button id="mobile-nav-analytics" onclick="switchTab('analytics')" class="flex flex-col items-center py-1 px-1.5 text-[11px] font-medium text-slate-500">
-      <i class="fa-solid fa-chart-pie text-base mb-0.5"></i> Métricas
-    </button>
-    <button id="mobile-nav-basket" onclick="switchTab('basket')" class="relative flex flex-col items-center py-1 px-1.5 text-[11px] font-medium text-slate-500">
+    <button id="mobile-nav-basket" onclick="switchTab('basket')" class="relative flex flex-col items-center py-1 px-2 text-[11px] font-medium text-slate-500 transition">
       <i class="fa-solid fa-cart-shopping text-base mb-0.5"></i> Canasta
       <span id="mobile-basket-badge" class="hidden absolute top-0 right-1 bg-brand-600 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
     </button>
@@ -300,120 +251,9 @@
 
 
 
-    <!-- KPI Metrics Banner -->
-
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3.5 mb-6">
-
-      <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center space-x-3.5">
-
-        <div class="w-10 h-10 rounded-lg bg-pink-50 text-brand-600 flex items-center justify-center font-bold text-lg">
-
-          <i class="fa-solid fa-database"></i>
-
-        </div>
-
-        <div>
-
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Productos</p>
-
-          <h3 id="kpi-total" class="text-xl font-bold text-slate-900">-</h3>
-
-        </div>
-
-      </div>
-
-
-
-      <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center space-x-3.5">
-
-        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
-
-          <i class="fa-solid fa-tags"></i>
-
-        </div>
-
-        <div>
-
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">En Oferta</p>
-
-          <div class="flex items-baseline space-x-1.5">
-
-            <h3 id="kpi-promos" class="text-xl font-bold text-slate-900">-</h3>
-
-            <span id="kpi-promo-pct" class="text-xs font-semibold text-emerald-600">-%</span>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-
-      <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center space-x-3.5">
-
-        <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg">
-
-          <i class="fa-solid fa-percent"></i>
-
-        </div>
-
-        <div>
-
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Descuento Máx</p>
-
-          <h3 id="kpi-max-disc" class="text-xl font-bold text-slate-900">-</h3>
-
-        </div>
-
-      </div>
-
-
-
-      <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center space-x-3.5">
-
-        <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
-
-          <i class="fa-solid fa-money-bill-wave"></i>
-
-        </div>
-
-        <div>
-
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Precio Promedio</p>
-
-          <h3 id="kpi-avg-price" class="text-xl font-bold text-slate-900">-</h3>
-
-        </div>
-
-      </div>
-
-
-
-      <div class="col-span-2 lg:col-span-1 bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex items-center space-x-3.5">
-
-        <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-lg">
-
-          <i class="fa-solid fa-layer-group"></i>
-
-        </div>
-
-        <div>
-
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Categorías</p>
-
-          <h3 id="kpi-categories" class="text-xl font-bold text-slate-900">-</h3>
-
-        </div>
-
-      </div>
-
-    </div>
-
-
+    <!-- KPI Metrics Banner removido -->
 
     <!-- ========================================== -->
-
     <!-- TAB 1: CATALOG & PRODUCT EXPLORER          -->
 
     <!-- ========================================== -->
@@ -474,7 +314,7 @@
 
                 <div class="font-bold leading-tight">La Gallega</div>
 
-                <div class="text-[10px] text-slate-500 font-normal">Supermercado Base</div>
+                <div class="text-[10px] text-slate-500 font-normal hidden sm:block">Supermercado Base</div>
 
               </div>
 
@@ -504,7 +344,7 @@
 
                 <div class="font-bold leading-tight">COTO Digital</div>
 
-                <div class="text-[10px] text-slate-500 font-normal">Catálogo COTO</div>
+                <div class="text-[10px] text-slate-500 font-normal hidden sm:block">Catálogo COTO</div>
 
               </div>
 
@@ -534,7 +374,7 @@
 
                 <div class="font-bold leading-tight">Carrefour</div>
 
-                <div class="text-[10px] text-slate-500 font-normal">Catálogo Carrefour</div>
+                <div class="text-[10px] text-slate-500 font-normal hidden sm:block">Catálogo Carrefour</div>
 
               </div>
 
@@ -564,7 +404,7 @@
 
                 <div class="font-bold leading-tight">La Reina</div>
 
-                <div class="text-[10px] text-slate-500 font-normal">Reina Online</div>
+                <div class="text-[10px] text-slate-500 font-normal hidden sm:block">Reina Online</div>
 
               </div>
 
@@ -592,7 +432,7 @@
 
                 <div class="font-bold leading-tight">Jumbo</div>
 
-                <div class="text-[10px] text-slate-500 font-normal">Catálogo Jumbo</div>
+                <div class="text-[10px] text-slate-500 font-normal hidden sm:block">Catálogo Jumbo</div>
 
               </div>
 
@@ -622,7 +462,7 @@
 
                 <div class="font-bold leading-tight">La Anónima</div>
 
-                <div class="text-[10px] text-slate-500 font-normal">Catálogo Online</div>
+                <div class="text-[10px] text-slate-500 font-normal hidden sm:block">Catálogo Online</div>
 
               </div>
 
@@ -1391,91 +1231,7 @@
 
 <!-- ========================================== -->
 
-    <section id="tab-analytics" class="hidden space-y-6">
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        <!-- Chart 1: Products per Category -->
-
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-
-          <h3 class="font-bold text-slate-800 text-sm mb-1">Distribución de Productos por Categoría</h3>
-
-          <p class="text-xs text-slate-500 mb-4">Cantidad de ítems relevados e indexados en la base de datos</p>
-
-          <div class="h-72">
-
-            <canvas id="categoryChart"></canvas>
-
-          </div>
-
-        </div>
-
-
-
-        <!-- Chart 2: Average Prices per Category -->
-
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-
-          <h3 class="font-bold text-slate-800 text-sm mb-1">Precio Promedio por Categoría ($ ARS)</h3>
-
-          <p class="text-xs text-slate-500 mb-4">Valor monetario medio de los productos por rubro</p>
-
-          <div class="h-72">
-
-            <canvas id="priceChart"></canvas>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-
-      <!-- Detailed Categories Breakdown Table -->
-
-      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-
-        <h3 class="font-bold text-slate-800 text-sm mb-4">Detalle Completo por Rubro</h3>
-
-        <div class="overflow-x-auto">
-
-          <table class="w-full text-left text-xs border-collapse">
-
-            <thead>
-
-              <tr class="bg-slate-50 font-bold text-slate-600 border-b border-slate-200">
-
-                <th class="py-2.5 px-3">Categoría</th>
-
-                <th class="py-2.5 px-3 text-right">Total Ítems</th>
-
-                <th class="py-2.5 px-3 text-right">En Promoción</th>
-
-                <th class="py-2.5 px-3 text-right">% Ofertas</th>
-
-                <th class="py-2.5 px-3 text-right">Precio Promedio</th>
-
-                <th class="py-2.5 px-3 text-center">Acción</th>
-
-              </tr>
-
-            </thead>
-
-            <tbody id="analytics-cat-tbody" class="divide-y divide-slate-100">
-
-              <!-- Rendered via JS -->
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </div>
-
-    </section>
+    <!-- tab-analytics removido -->
 
 
 
@@ -2784,7 +2540,7 @@
 
     function switchTab(tabId) {
       state.activeTab = tabId;
-      const tabs = ['catalog', 'comparator', 'scanner', 'analytics', 'audit', 'basket'];
+      const tabs = ['catalog', 'comparator', 'scanner', 'audit', 'basket'];
       tabs.forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         const nav = document.getElementById(`nav-${t}`);
@@ -3176,17 +2932,16 @@
 
 
 
-        document.getElementById('kpi-total').textContent = (data.total_products || 0).toLocaleString();
-
-        document.getElementById('kpi-promos').textContent = (data.promo_count || 0).toLocaleString();
-
-        document.getElementById('kpi-promo-pct').textContent = `${data.promo_pct || 0}%`;
-
-        document.getElementById('kpi-max-disc').textContent = `${data.max_discount || 0}%`;
-
-        document.getElementById('kpi-avg-price').textContent = formatCurrency(data.avg_price);
-
-        document.getElementById('kpi-categories').textContent = (data.total_categories || 0);
+        const setKpiVal = (id, val) => {
+          const el = document.getElementById(id);
+          if (el && val !== undefined) el.textContent = val;
+        };
+        setKpiVal('kpi-total', (data.total_products || 0).toLocaleString());
+        setKpiVal('kpi-promos', (data.promo_count || 0).toLocaleString());
+        setKpiVal('kpi-promo-pct', `${data.promo_pct || 0}%`);
+        setKpiVal('kpi-max-disc', `${data.max_discount || 0}%`);
+        setKpiVal('kpi-avg-price', formatCurrency(data.avg_price));
+        setKpiVal('kpi-categories', (data.total_categories || 0));
 
 
 
@@ -6176,9 +5931,9 @@
 
         const text = document.getElementById('status-banner-text');
 
-        const icon = document.getElementById('scraper-icon');
+        const icon = document.getElementById('scraper-icon'); if (icon) icon.classList.add('fa-spin'); //
 
-        const btnText = document.getElementById('scraper-btn-text');
+        const btnText = document.getElementById('scraper-btn-text'); if (btnText) btnText.textContent = 'Actualizando...'; //
 
 
 
@@ -6196,9 +5951,9 @@
 
           banner.classList.add('hidden');
 
-          icon.classList.remove('fa-spin');
+          if (icon) icon.classList.remove('fa-spin');
 
-          btnText.textContent = 'Actualizar Precios';
+          if (btnText) btnText.textContent = 'Actualizar Precios';
 
         }
 
