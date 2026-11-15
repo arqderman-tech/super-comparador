@@ -781,11 +781,11 @@
 
           </div>
 
-          <div>
+          <div class="hidden md:block">
 
             <label class="block text-[11px] font-bold text-slate-600 mb-1">Ordenar por:</label>
 
-            <select id="comparator-sort" onchange="renderComparatorTable(1)" class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <select id="comparator-sort" onchange="syncComparatorSortFromDesktop()" class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
 
               <option value="diff_desc">Mayor diferencial (% ahorro)</option>
 
@@ -848,6 +848,23 @@
         </div>
 
 
+
+        <div class="md:hidden mb-4">
+          <label for="comparator-sort-mobile" class="block text-[11px] font-bold text-slate-600 mb-1">Ordenar resultados:</label>
+          <select id="comparator-sort-mobile" onchange="syncComparatorSortFromMobile()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="diff_desc">Mayor diferencial (% ahorro)</option>
+            <option value="diff_jumbo">Más barato en Jumbo primero</option>
+            <option value="diff_laanonima">Más barato en La Anónima primero</option>
+            <option value="diff_carrefour">Más barato en Carrefour primero</option>
+            <option value="diff_coto">Más barato en COTO primero</option>
+            <option value="diff_reina">Más barato en La Reina primero</option>
+            <option value="diff_gallega">Más barato en La Gallega primero</option>
+            <option value="price_asc">Precio: menor a mayor</option>
+            <option value="price_desc">Precio: mayor a menor</option>
+            <option value="discount">Mayor descuento promo</option>
+            <option value="name">Alfabético (A-Z)</option>
+          </select>
+        </div>
 
         <div class="flex items-center justify-between text-xs text-slate-500 mb-2 px-1">
 
@@ -4097,6 +4114,19 @@
 
     }
 
+    function syncComparatorSortFromMobile() {
+      const mobileSort = document.getElementById('comparator-sort-mobile');
+      const desktopSort = document.getElementById('comparator-sort');
+      if (mobileSort && desktopSort) desktopSort.value = mobileSort.value;
+      renderComparatorTable(1);
+    }
+
+    function syncComparatorSortFromDesktop() {
+      const desktopSort = document.getElementById('comparator-sort');
+      const mobileSort = document.getElementById('comparator-sort-mobile');
+      if (desktopSort && mobileSort) mobileSort.value = desktopSort.value;
+      renderComparatorTable(1);
+    }
 
 
     // Render Multi-Store Comparator Table
@@ -4113,7 +4143,12 @@
 
       const chainFilter = document.getElementById('comparator-chain-filter') ? document.getElementById('comparator-chain-filter').value : 'all';
 
-      const sortVal = document.getElementById('comparator-sort') ? document.getElementById('comparator-sort').value : 'diff_desc';
+      const sortSelect = document.getElementById('comparator-sort');
+      const sortVal = sortSelect ? sortSelect.value : 'diff_desc';
+      const mobileSortSelect = document.getElementById('comparator-sort-mobile');
+      if (mobileSortSelect && mobileSortSelect.value !== sortVal) {
+        mobileSortSelect.value = sortVal;
+      }
 
       const limitSelect = document.getElementById('comparator-limit');
 
