@@ -87,6 +87,46 @@
 
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
 
+    /* Comparador en móvil: la tabla se apila en bloques legibles, sin scroll horizontal.
+       Solo aplica por debajo del breakpoint md (768px); en escritorio no cambia nada. */
+    @media (max-width: 767px) {
+      #comparator-table-wrapper table,
+      #comparator-table-wrapper thead,
+      #comparator-table-wrapper tbody,
+      #comparator-table-wrapper tr,
+      #comparator-table-wrapper td { display: block; width: 100%; }
+      #comparator-table-wrapper thead { display: none; }
+      #comparator-table-wrapper tr {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        padding: 0.6rem 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+      #comparator-table-wrapper td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.3rem 0;
+        border: none;
+        text-align: left;
+        white-space: normal;
+      }
+      #comparator-table-wrapper td::before {
+        content: attr(data-label);
+        flex: 0 0 auto;
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+      /* Las tiendas sin precio se ocultan para que el bloque quede compacto */
+      #comparator-table-wrapper td.comp-cell-empty { display: none; }
+      #comparator-table-wrapper td[colspan] { display: block; text-align: center; }
+    }
+
       @keyframes scan-laser {
       0% { top: 8%; opacity: 0.8; }
       50% { top: 88%; opacity: 1; }
@@ -4527,15 +4567,15 @@
 
               </td>
 
-              <td class="py-2.5 px-3 text-slate-600 whitespace-nowrap">${p.category}</td>
+              <td data-label="Categoría" class="py-2.5 px-3 text-slate-600 whitespace-nowrap">${p.category}</td>
 
-              <td class="py-2.5 px-3 text-right font-extrabold ${isLgWinner ? 'text-brand-700 bg-pink-100/60 ring-1 ring-brand-300 rounded' : 'text-slate-800 bg-pink-50/20'} whitespace-nowrap">
+              <td data-label="La Gallega" class="py-2.5 px-3 text-right font-extrabold ${isLgWinner ? 'text-brand-700 bg-pink-100/60 ring-1 ring-brand-300 rounded' : 'text-slate-800 bg-pink-50/20'} whitespace-nowrap${pLg > 0 ? '' : ' comp-cell-empty'}">
 
                 ${formatCurrency(pLg)}
 
               </td>
 
-              <td class="py-2.5 px-3 text-right ${isCotoWinner ? 'font-extrabold text-emerald-700 bg-emerald-100/60 ring-1 ring-emerald-300 rounded' : 'font-bold text-slate-700'} whitespace-nowrap">
+              <td data-label="COTO" class="py-2.5 px-3 text-right ${isCotoWinner ? 'font-extrabold text-emerald-700 bg-emerald-100/60 ring-1 ring-emerald-300 rounded' : 'font-bold text-slate-700'} whitespace-nowrap${pCoto > 0 ? '' : ' comp-cell-empty'}">
 
                 ${pCoto > 0 ? (
 
@@ -4751,7 +4791,7 @@
 
               </td>
 
-              <td class="py-2.5 px-3 text-right ${isCarrWinner ? 'font-extrabold text-blue-700 bg-blue-100/60 ring-1 ring-blue-300 rounded' : 'font-bold text-slate-700'} whitespace-nowrap">
+              <td data-label="Carrefour" class="py-2.5 px-3 text-right ${isCarrWinner ? 'font-extrabold text-blue-700 bg-blue-100/60 ring-1 ring-blue-300 rounded' : 'font-bold text-slate-700'} whitespace-nowrap${pCarr > 0 ? '' : ' comp-cell-empty'}">
 
                 ${pCarr > 0 ? (
 
@@ -4867,7 +4907,7 @@
 
               </td>
 
-              <td class="py-2.5 px-3 text-right ${isReinaWinner ? 'font-extrabold text-orange-700 bg-orange-100/60 ring-1 ring-orange-300 rounded' : 'font-bold text-slate-700'} whitespace-nowrap">
+              <td data-label="La Reina" class="py-2.5 px-3 text-right ${isReinaWinner ? 'font-extrabold text-orange-700 bg-orange-100/60 ring-1 ring-orange-300 rounded' : 'font-bold text-slate-700'} whitespace-nowrap${pReina > 0 ? '' : ' comp-cell-empty'}">
 
                 ${pReina > 0 ? (
 
@@ -5085,7 +5125,7 @@
 
               </td>
 
-              <td class="py-2.5 px-3 text-right ${isJumboWinner ? 'font-extrabold text-emerald-700 bg-emerald-100/60 ring-1 ring-emerald-300 rounded' : 'font-bold text-slate-700'} whitespace-nowrap">
+              <td data-label="Jumbo" class="py-2.5 px-3 text-right ${isJumboWinner ? 'font-extrabold text-emerald-700 bg-emerald-100/60 ring-1 ring-emerald-300 rounded' : 'font-bold text-slate-700'} whitespace-nowrap${pJumbo > 0 ? '' : ' comp-cell-empty'}">
 
                 ${pJumbo > 0 ? (
 
@@ -5303,7 +5343,7 @@
 
               </td>
 
-              <td class="py-2.5 px-3 text-right ${isLaAnonimaWinner ? 'font-extrabold text-red-700 bg-red-100/60 ring-1 ring-red-300 rounded' : 'font-bold text-slate-700'} whitespace-nowrap">
+              <td data-label="La Anónima" class="py-2.5 px-3 text-right ${isLaAnonimaWinner ? 'font-extrabold text-red-700 bg-red-100/60 ring-1 ring-red-300 rounded' : 'font-bold text-slate-700'} whitespace-nowrap${pLaAnonima > 0 ? '' : ' comp-cell-empty'}">
 
                 ${pLaAnonima > 0 ? (
 
@@ -5361,13 +5401,13 @@
 
               </td>
 
-              <td class="py-2.5 px-3 text-center">
+              <td data-label="Mejor opción" class="py-2.5 px-3 text-center">
 
                 ${badgeHtml}
 
               </td>
 
-              <td class="py-2.5 px-3 text-center whitespace-nowrap">
+              <td data-label="Acciones" class="py-2.5 px-3 text-center whitespace-nowrap">
 
                 <div class="flex items-center justify-center space-x-1">
 
