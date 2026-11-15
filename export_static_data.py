@@ -12,6 +12,7 @@ import os
 import sys
 import json
 import sqlite3
+import glob
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -23,6 +24,21 @@ import server
 import db
 
 SUPERMARKETS = ['La Gallega', 'Coto', 'Carrefour', 'La Reina', 'Jumbo', 'La Anónima']
+EAN_SHARD_COUNT = 128
+MAX_STATIC_FILE_BYTES = 90 * 1024 * 1024
+
+def get_ean_shard(key):
+    """Match the frontend's FNV-1a hash over JavaScript UTF-16 code units."""
+    value = 2166136261
+    encoded = str(key).encode("utf-16-le")
+    for offset in range(0, len(encoded), 2):
+        code_unit = encoded[offset] | (encoded[offset + 1] << 8)
+        value = ((value ^ code_unit) * 16777619) & 0xFFFFFFFF
+    return value % EAN_SHARD_COUNT
+
+def write_json(path, data):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
 
 def get_super_slug(name):
     norm = name.lower().replace(" ", "").replace("ó", "o").replace("á", "a").replace("é", "e").replace("í", "i")
@@ -120,7 +136,7 @@ def run_export():
         print(f"   Aviso en comparator.json: {e}")
 
     # 8. Diccionario de productos completos por EAN e ID (para escáner en vivo y fichas)
-    print("8. Exportando products_by_ean.json (Fichas completas, comparativa multitienda e historial)...")
+    print("8. Exportando fichas de producto por fragmentos EAN (comparativa multitienda e historial)...")
     c.execute("SELECT DISTINCT product_id FROM competitor_prices")
     target_ids = set(r[0] for r in c.fetchall())
     for s_deals in deals_by_super.values():
@@ -244,13 +260,54 @@ def run_export():
         except Exception as e:
             pass
 
-    with open(os.path.join(DATA_DIR, "products_by_ean.json"), "w", encoding="utf-8") as f:
-        json.dump(ean_dict, f, ensure_ascii=False, separators=(',', ':'))
-    print(f"   -> {len(ean_dict)} claves indexadas en products_by_ean.json")
+    # Store details in balanced, independently loadable files for GitHub Pages.
+    shard_dir = os.path.join(DATA_DIR, "products_by_ean")
+    os.makedirs(shard_dir, exist_ok=True)
+    for old_shard in glob.glob(os.path.join(shard_dir, "shard-*.json")):
+        os.remove(old_shard)
+
+    shards = {}
+    id_index = {}
+    for key, detail in ean_dict.items():
+        shard_id = get_ean_shard(key)
+        shards.setdefault(shard_id, {})[key] = detail
+        if detail.get('id') is not None:
+            id_index[str(detail['id'])] = key
+
+    for shard_id, shard_data in shards.items():
+        shard_name = f"shard-{shard_id:03d}.json"
+        write_json(os.path.join(shard_dir, shard_name), shard_data)
+
+    write_json(os.path.join(DATA_DIR, "products_by_id.json"), id_index)
+    legacy_index = os.path.join(DATA_DIR, "products_by_ean.json")
+    if os.path.exists(legacy_index):
+        os.remove(legacy_index)
+
+    print(f"   -> {len(ean_dict)} claves en {len(shards)} fragmentos de products_by_ean/")
+    print(f"   -> {len(id_index)} productos indexados en products_by_id.json")
 
     conn.close()
 
-    total_mb = sum(os.path.getsize(os.path.join(DATA_DIR, f)) for f in os.listdir(DATA_DIR)) / (1024*1024)
+    oversized_files = []
+    total_bytes = 0
+    for root, _, filenames in os.walk(DATA_DIR):
+        for filename in filenames:
+            path = os.path.join(root, filename)
+            size = os.path.getsize(path)
+            total_bytes += size
+            if size > MAX_STATIC_FILE_BYTES:
+                oversized_files.append((path, size))
+
+    if oversized_files:
+        details = ", ".join(
+            f"{path} ({size / (1024 * 1024):.1f} MiB)"
+            for path, size in oversized_files
+        )
+        raise RuntimeError(
+            f"Hay archivos estáticos mayores a 90 MiB; no se pueden publicar de forma confiable en GitHub: {details}"
+        )
+
+    total_mb = total_bytes / (1024*1024)
     print(f"\n✓ Exportación completada con éxito. Tamaño total: {total_mb:.2f} MB")
     print("✓ El sitio web ahora es 100% autónomo y rápido en GitHub Pages!")
 

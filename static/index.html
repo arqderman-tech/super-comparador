@@ -1805,9 +1805,12 @@
 
     let staticCache = {
       products: null,
-      byEan: null,
-      byId: null,
-      byEanPromise: null,
+      byEan: {},
+      byId: {},
+      byEanPromises: Object.create(null),
+      byIdIndex: null,
+      byIdIndexPromise: null,
+      legacyByEanPromise: null,
       stats: null,
       categories: null,
       deals: null,
@@ -1817,35 +1820,111 @@
 
     const originalFetch = window.fetch;
 
-    async function ensureByEanLoaded() {
-      if (staticCache.byEan) return staticCache.byEan;
-      if (!staticCache.byEanPromise) {
-        staticCache.byEanPromise = (async () => {
-          try {
-            const r = await originalFetch(dataPrefix + 'products_by_ean.json');
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            const data = await r.json();
-            staticCache.byEan = data || {};
-            staticCache.byId = {};
-            for (const item of Object.values(staticCache.byEan)) {
-              if (item && item.id != null) {
-                staticCache.byId[String(item.id)] = item;
-              }
-            }
-            return staticCache.byEan;
-          } catch(e) {
-            console.error('Error fetching products_by_ean.json:', e);
-            staticCache.byEanPromise = null;
-            throw e;
-          }
-        })();
+    function getEanShardName(key) {
+      // Keep the hash and bucket count in sync with export_static_data.py.
+      let hash = 0x811c9dc5;
+      const value = String(key);
+      for (let i = 0; i < value.length; i++) {
+        hash ^= value.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193);
       }
-      return staticCache.byEanPromise;
+      const shard = (hash >>> 0) % 128;
+      return `shard-${String(shard).padStart(3, '0')}.json`;
+    }
+
+    async function loadByIdIndex() {
+      if (staticCache.byIdIndex) return staticCache.byIdIndex;
+      if (!staticCache.byIdIndexPromise) {
+        staticCache.byIdIndexPromise = (async () => {
+          const r = await originalFetch(dataPrefix + 'products_by_id.json');
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          staticCache.byIdIndex = await r.json() || {};
+          return staticCache.byIdIndex;
+        })().catch(e => {
+          staticCache.byIdIndexPromise = null;
+          throw e;
+        });
+      }
+      return staticCache.byIdIndexPromise;
+    }
+
+    async function loadLegacyByEanIndex() {
+      if (!staticCache.legacyByEanPromise) {
+        staticCache.legacyByEanPromise = (async () => {
+          const r = await originalFetch(dataPrefix + 'products_by_ean.json');
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const data = await r.json() || {};
+          Object.assign(staticCache.byEan, data);
+          for (const item of Object.values(data)) {
+            if (item && item.id != null) {
+              staticCache.byId[String(item.id)] = item;
+            }
+          }
+          return data;
+        })().catch(e => {
+          staticCache.legacyByEanPromise = null;
+          throw e;
+        });
+      }
+      return staticCache.legacyByEanPromise;
+    }
+
+    async function loadByEanShard(key) {
+      const shardName = getEanShardName(key);
+      if (!staticCache.byEanPromises[shardName]) {
+        staticCache.byEanPromises[shardName] = (async () => {
+          const r = await originalFetch(dataPrefix + 'products_by_ean/' + shardName);
+          if (r.status === 404) return {};
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const data = await r.json() || {};
+          Object.assign(staticCache.byEan, data);
+          for (const item of Object.values(data)) {
+            if (item && item.id != null) {
+              staticCache.byId[String(item.id)] = item;
+            }
+          }
+          return data;
+        })().catch(e => {
+          delete staticCache.byEanPromises[shardName];
+          throw e;
+        });
+      }
+      return staticCache.byEanPromises[shardName];
+    }
+
+    async function ensureByEanLoaded(key) {
+      if (key == null || !String(key).trim()) return staticCache.byEan;
+      const value = String(key).trim();
+      const variants = [...new Set([
+        value,
+        value.replace(/^0+/, ''),
+        '0' + value
+      ].filter(Boolean))];
+      try {
+        await Promise.all(variants.map(loadByEanShard));
+      } catch (e) {
+        console.warn('Error loading product EAN shard:', e);
+      }
+
+      if (!findInByEan(value)) {
+        try {
+          const idIndex = await loadByIdIndex();
+          const indexedKey = idIndex[value];
+          if (indexedKey) await loadByEanShard(indexedKey);
+        } catch (e) {
+          try {
+            await loadLegacyByEanIndex();
+          } catch (legacyError) {
+            console.warn('Error loading product lookup data:', legacyError);
+          }
+        }
+      }
+      return staticCache.byEan;
     }
     window.ensureByEanLoaded = ensureByEanLoaded;
 
     function findInByEan(key) {
-      if (!staticCache.byEan || !key) return null;
+      if (!key) return null;
       const s = String(key).trim();
       if (!s) return null;
       return staticCache.byEan[s] || 
@@ -1868,8 +1947,13 @@
       if (!isGitHubPages) {
         try {
           const resp = await originalFetch(url, options);
-          if (resp.ok || resp.status === 404 || resp.status === 400) {
+          const isEanLookup = urlStr.includes('/api/products/by-ean/');
+          if (resp.ok || resp.status === 400 || (resp.status === 404 && !isEanLookup)) {
             return resp;
+          }
+          // A local DB miss may still be present in the exported static catalog.
+          if (resp.status === 404 && isEanLookup) {
+            console.info('EAN not found in local database; checking static product data.');
           }
         } catch(e) {
           console.warn('Backend /api unreachable, activating static GitHub Pages fallback:', e);
@@ -1955,7 +2039,7 @@
         if (path.startsWith('/api/products/by-ean/')) {
           const ean = decodeURIComponent(path.replace('/api/products/by-ean/', '')).trim();
           try {
-            await ensureByEanLoaded();
+            await ensureByEanLoaded(ean);
           } catch(e) {}
           let found = findInByEan(ean);
           if (!found) {
@@ -2000,7 +2084,7 @@
         if (path.startsWith('/api/products/') && !path.includes('/history')) {
           const id = decodeURIComponent(path.replace('/api/products/', '')).trim();
           try {
-            await ensureByEanLoaded();
+            await ensureByEanLoaded(id);
           } catch(e) {}
 
           let p = null;
@@ -2017,6 +2101,11 @@
           let found = null;
           if (p) {
             const cleanEan = (p.ean || '').trim();
+            if (cleanEan) {
+              try {
+                await ensureByEanLoaded(cleanEan);
+              } catch(e) {}
+            }
             const base = cleanEan ? findInByEan(cleanEan) : (staticCache.byId ? staticCache.byId[String(p.id)] : null);
             const myStore = p.supermarket || (base && base.supermarket) || 'La Gallega';
 
@@ -2100,7 +2189,7 @@
           const reqSuper = params.get('supermarket') || '';
 
           try {
-            await ensureByEanLoaded();
+            await ensureByEanLoaded(id);
           } catch(e) {}
           let prod = (staticCache.byId && staticCache.byId[String(id)]) || findInByEan(id);
           if (!prod) {
@@ -2116,6 +2205,11 @@
             }
             if (p) {
               const cleanEan = (p.ean || '').trim();
+              if (cleanEan) {
+                try {
+                  await ensureByEanLoaded(cleanEan);
+                } catch(e) {}
+              }
               prod = cleanEan ? findInByEan(cleanEan) : (staticCache.byId ? staticCache.byId[String(p.id)] : null);
             }
           }
