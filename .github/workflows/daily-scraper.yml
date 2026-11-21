@@ -40,6 +40,10 @@ jobs:
 
       - name: 🛒 Ejecutar Scraper de La Anónima (IP Residencial)
         id: laanonima_scraper
+        env:
+          # Si está definida la variable de repositorio LAANONIMA_PROXY (p. ej. Cloudflare WARP
+          # en modo proxy: http://127.0.0.1:40000), el scraper sale por esa IP y evita el 403.
+          LAANONIMA_PROXY: ${{ vars.LAANONIMA_PROXY }}
         run: |
           python3 scraper_laanonima.py
 
