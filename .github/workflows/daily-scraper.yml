@@ -39,19 +39,27 @@ jobs:
           python3 db_split.py ensure
 
       - name: 🛒 Ejecutar Scraper de La Anónima (IP Residencial)
+        id: laanonima_scraper
         run: |
           python3 scraper_laanonima.py
 
       - name: 🧩 Particionar base completa para GitHub (<100MB por bloque)
+        if: steps.laanonima_scraper.outcome == 'success'
         run: |
           python3 db_split.py split
 
       - name: 💾 Guardar y sincronizar avance de La Anónima
+        if: steps.laanonima_scraper.outcome == 'success'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add database.db.part*
-          git diff --staged --quiet || (git commit -m "chore(auto): actualización diaria La Anónima desde Raspberry Pi [skip ci]" && git push)
+          if git diff --staged --quiet; then
+            echo "::warning title=La Anónima sin cambios::No hubo cambios para commitear (catalogo identico al previo o sin datos nuevos)."
+          else
+            git commit -m "chore(auto): actualización diaria La Anónima desde Raspberry Pi [skip ci]"
+            git push
+          fi
 
   scrape-cloud-and-deploy:
     name: ☁️ Relevar Multitienda Cloud y Desplegar Web
