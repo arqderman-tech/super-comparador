@@ -1,0 +1,101 @@
+name: Diag WARP vs WAF (temporal)
+
+on:
+  push:
+    branches: [diag/warp-waf]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Probar salidas WARP contra La Anonima
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 20
+
+    steps:
+      - name: Estado inicial + prueba via proxy actual
+        run: |
+          set -u
+          echo "=== warp-cli status ==="
+          sudo -n warp-cli --accept-tos status 2>&1 | head -6 || true
+
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+          PORTADA="https://www.laanonima.com.ar/"
+          SUBCAT="https://www.laanonima.com.ar/suavizantes/n3_702/"
+
+          test_proxy() {
+            label="$1"
+            ip=$(curl -s --max-time 10 -x http://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace | grep '^ip=' | cut -d= -f2)
+            warpon=$(curl -s --max-time 10 -x http://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace | grep '^warp=' | cut -d= -f2)
+            c1=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 -x http://127.0.0.1:40000 -A "$UA" "$PORTADA")
+            c2=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 -x http://127.0.0.1:40000 -A "$UA" "$SUBCAT")
+            echo "[$label] ip=${ip:-?} warp=${warpon:-?} portada=$c1 subcat=$c2"
+          }
+
+          echo "--- directo (sin proxy) ---"
+          d1=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 -A "$UA" "$PORTADA")
+          echo "[directo] portada=$d1"
+
+          echo "--- via WARP (IP actual) ---"
+          test_proxy "proxy-ip-actual"
+
+      - name: Rotar IP (disconnect/connect) x4
+        run: |
+          set -u
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+          PORTADA="https://www.laanonima.com.ar/"
+          SUBCAT="https://www.laanonima.com.ar/suavizantes/n3_702/"
+          for i in 1 2 3 4; do
+            sudo -n warp-cli --accept-tos disconnect 2>/dev/null || true
+            sleep 2
+            sudo -n warp-cli --accept-tos connect 2>/dev/null || true
+            sleep 8
+            ip=$(curl -s --max-time 10 -x http://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace | grep '^ip=' | cut -d= -f2)
+            c1=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 -x http://127.0.0.1:40000 -A "$UA" "$PORTADA")
+            c2=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 -x http://127.0.0.1:40000 -A "$UA" "$SUBCAT")
+            echo "[rotacion $i] ip=${ip:-?} portada=$c1 subcat=$c2"
+          done
+
+      - name: Re-registro completo de WARP (IP nueva)
+        run: |
+          set -u
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+          PORTADA="https://www.laanonima.com.ar/"
+          SUBCAT="https://www.laanonima.com.ar/suavizantes/n3_702/"
+          sudo -n warp-cli --accept-tos disconnect 2>/dev/null || true
+          sleep 2
+          sudo -n warp-cli --accept-tos registration delete 2>/dev/null || true
+          sleep 2
+          sudo -n warp-cli --accept-tos registration new 2>/dev/null \
+            || sudo -n warp-cli --accept-tos register 2>/dev/null || true
+          sudo -n warp-cli --accept-tos mode proxy 2>/dev/null || true
+          sudo -n warp-cli --accept-tos connect 2>/dev/null || true
+          sleep 10
+          ip=$(curl -s --max-time 10 -x http://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace | grep '^ip=' | cut -d= -f2)
+          c1=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 -x http://127.0.0.1:40000 -A "$UA" "$PORTADA")
+          c2=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 -x http://127.0.0.1:40000 -A "$UA" "$SUBCAT")
+          echo "[re-registro] ip=${ip:-?} portada=$c1 subcat=$c2"
+
+      - name: Prueba con curl_cffi (lo que usa el scraper real)
+        run: |
+          set -u
+          python3 - <<'PY' || true
+          import os
+          os.environ.setdefault("LAANONIMA_PROXY", "http://127.0.0.1:40000")
+          try:
+              from curl_cffi import requests as r
+          except Exception as e:
+              print("curl_cffi no disponible:", e); raise SystemExit(0)
+          proxy = "http://127.0.0.1:40000"
+          for url in ["https://www.laanonima.com.ar/",
+                      "https://www.laanonima.com.ar/suavizantes/n3_702/"]:
+              for target in ("chrome131", "chrome124", "chrome120"):
+                  try:
+                      s = r.Session(impersonate=target, proxies={"http": proxy, "https": proxy})
+                      resp = s.get(url, timeout=25)
+                      print(f"[curl_cffi {target}] {url} -> {resp.status_code}")
+                      break
+                  except Exception as e:
+                      print(f"[curl_cffi {target}] {url} error: {e}")
+          PY
