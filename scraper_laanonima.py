@@ -47,10 +47,19 @@ logging.basicConfig(
 log = logging.getLogger("scraper_laanonima")
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "es-419,es;q=0.9",
+    "Accept-Language": "es-AR,es-419;q=0.9,es;q=0.8,en;q=0.7",
     "Referer": "https://www.laanonima.com.ar/",
+    "Upgrade-Insecure-Requests": "1",
+    "sec-ch-ua": '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Windows"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-User": "?1",
+    "Connection": "keep-alive",
 }
 
 # Cookie oficial para Rosario (CP 2000, Sucursal 186)
@@ -62,8 +71,13 @@ COOKIES = {
 # Departamentos N1 de Supermercado en La Anonima
 SUPER_N1_IDS = ['512', '513', '516', '766', '517', '518', '820', '514', '877']
 
-# Concurrencia moderada para evitar bloqueos por tasa de peticiones en CloudFront WAF
-MAX_WORKERS = 8
+# Objetivos de impersonacion TLS soportados por curl_cffi (se usa el primero disponible).
+# Se prioriza una version de Chrome reciente; si la libreria instalada no la soporta,
+# se cae a versiones anteriores automaticamente.
+CURL_IMPERSONATE_TARGETS = ["chrome131", "chrome124", "chrome120"]
+
+# Concurrencia reducida para no disparar el WAF de CloudFront por tasa de peticiones
+MAX_WORKERS = 4
 BATCH_SIZE = 500
 
 current_status: Dict[str, Any] = {
@@ -79,22 +93,36 @@ current_status: Dict[str, Any] = {
 
 _thread_local = threading.local()
 
+# Contadores thread-safe de estados HTTP y bandera de bloqueo de la ultima corrida
+_status_lock = threading.Lock()
+_http_status_counts: Dict[int, int] = {}
+_last_run_blocked = False
+
+
+def _register_http_status(status: int):
+    """Registra de forma thread-safe el codigo HTTP de cada respuesta para diagnostico."""
+    with _status_lock:
+        _http_status_counts[status] = _http_status_counts.get(status, 0) + 1
+
 
 def get_session():
     """
     Obtiene una sesion HTTP configurada por hilo.
-    Prioriza curl_cffi con impersonacion TLS de Chrome para mitigar bloqueos CloudFront.
+    Prioriza curl_cffi con impersonacion TLS de Chrome actualizado para mitigar
+    bloqueos de CloudFront WAF (HTTP 403). Si la version de impersonacion no esta
+    soportada por la libreria instalada, prueba con versiones anteriores.
     """
     if not hasattr(_thread_local, "session") or _thread_local.session is None:
         if HAS_CURL_CFFI:
-            try:
-                s = cffi_requests.Session(impersonate="chrome120")
-                s.headers.update(HEADERS)
-                s.cookies.update(COOKIES)
-                _thread_local.session = s
-                return s
-            except Exception as e:
-                log.warning(f"Fallo al inicializar curl_cffi session: {e}. Usando requests estandar.")
+            for target in CURL_IMPERSONATE_TARGETS:
+                try:
+                    s = cffi_requests.Session(impersonate=target)
+                    s.headers.update(HEADERS)
+                    s.cookies.update(COOKIES)
+                    _thread_local.session = s
+                    return s
+                except Exception as e:
+                    log.warning(f"Impersonacion curl_cffi '{target}' no disponible: {e}")
 
         s = requests.Session()
         adapter = HTTPAdapter(
@@ -110,6 +138,22 @@ def get_session():
         _thread_local.session = s
 
     return _thread_local.session
+
+
+def warm_up_session(session: Any) -> None:
+    """
+    Visita la portada antes del catalogo para obtener cookies de sesion y
+    presentar un fingerprint de navegacion mas creible ante el WAF.
+    """
+    try:
+        r = session.get("https://www.laanonima.com.ar/", timeout=12)
+        _register_http_status(r.status_code)
+        if r.status_code == 200:
+            log.info("Warm-up de portada OK (cookies de sesion obtenidas)")
+        else:
+            log.warning(f"Warm-up de portada retorno HTTP {r.status_code}")
+    except Exception as e:
+        log.warning(f"Warm-up de portada fallo: {e}")
 
 
 def load_cached_subcategories() -> List[Tuple[str, str]]:
@@ -265,9 +309,10 @@ def scrape_subcategory(item: Tuple[str, str], session: Optional[Any] = None) -> 
 
     products = []
     try:
-        time.sleep(random.uniform(0.05, 0.15))
+        time.sleep(random.uniform(0.3, 0.9))
         r = session.get(cat_url, timeout=15)
         if r.status_code != 200:
+            _register_http_status(r.status_code)
             log.warning(f"HTTP {r.status_code} en subcategoria: {cat_name} ({cat_url})")
             return []
 
@@ -349,7 +394,7 @@ def search_laanonima_by_ean(session: Any, ean: str) -> Optional[Dict[str, Any]]:
         return None
     url = f"https://www.laanonima.com.ar/buscar/{clean_e}"
     try:
-        time.sleep(random.uniform(0.05, 0.15))
+        time.sleep(random.uniform(0.3, 0.9))
         r = session.get(url, timeout=8)
         if r.status_code == 200 and "No encontramos resultados para" not in r.text:
             soup = BeautifulSoup(r.text, 'html.parser')
@@ -642,7 +687,7 @@ def update_laanonima_catalog_and_prices(
 
 
 def main(quick_mode: bool = False):
-    global current_status
+    global current_status, _last_run_blocked
     start_time = time.time()
     current_status["is_running"] = True
     current_status["message"] = "Iniciando extraccion de La Anonima..."
@@ -654,6 +699,7 @@ def main(quick_mode: bool = False):
 
     try:
         session = get_session()
+        warm_up_session(session)
 
         # 1. Cargar EANs de La Gallega y base global
         ean_dict_lg = get_lagallega_eans()
@@ -700,9 +746,24 @@ def main(quick_mode: bool = False):
 
         # Si no se pudo obtener ningun producto (ej. bloqueo temporal severo), no borrar la BD
         if not all_products:
-            log.warning("No se pudo obtener ningun producto de las subcategorias. Conservando estado previo en BD.")
+            log.warning(f"Resumen de respuestas HTTP: {dict(_http_status_counts)}")
+            blocked_403 = _http_status_counts.get(403, 0)
+            _last_run_blocked = blocked_403 > 0
             current_status["is_running"] = False
-            current_status["message"] = "Aviso: Sin productos extraidos (posible bloqueo temporal). Se preservo la BD."
+            if blocked_403 > 0:
+                msg = (
+                    f"BLOQUEO DETECTADO: La Anonima respondio HTTP 403 en {blocked_403} "
+                    f"subcategorias (WAF de CloudFront). Se preserva la BD sin cambios. "
+                    f"Posible bloqueo de la IP del runner o nueva regla del WAF."
+                )
+                log.error(msg)
+                # Anotacion visible en el resumen del run de GitHub Actions
+                print(f"::error title=La Anónima bloqueada (HTTP 403)::{msg}")
+                current_status["message"] = f"Bloqueo HTTP 403 ({blocked_403} subcats). BD preservada."
+            else:
+                log.warning("No se pudo obtener ningun producto de las subcategorias. Conservando estado previo en BD.")
+                print("::warning title=La Anónima sin productos::No se extrajo ningun producto. Se preservo la BD.")
+                current_status["message"] = "Aviso: Sin productos extraidos (posible bloqueo temporal). Se preservo la BD."
             return 0, 0
 
         # Deduplicar productos de catalogo por codigo
@@ -740,7 +801,7 @@ def main(quick_mode: bool = False):
             current_status["message"] = f"Resolviendo EANs para {len(prods_needing_pdp):,} articulos nuevos..."
             def fetch_prod_gtin(p):
                 s = get_session()
-                time.sleep(random.uniform(0.05, 0.15))
+                time.sleep(random.uniform(0.3, 0.9))
                 gtin = fetch_gtin_from_pdp(s, p)
                 if gtin:
                     p['ean'] = gtin
@@ -801,3 +862,8 @@ def main(quick_mode: bool = False):
 if __name__ == "__main__":
     is_quick = "--quick" in sys.argv
     main(quick_mode=is_quick)
+    # Salir con codigo != 0 si hubo bloqueo 403, para que el job de Actions quede
+    # marcado en rojo y el aviso sea visible (el workflow general no se detiene por
+    # el continue-on-error del job de la Raspberry Pi).
+    if _last_run_blocked:
+        sys.exit(3)
