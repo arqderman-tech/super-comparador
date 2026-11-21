@@ -38,12 +38,39 @@ jobs:
         run: |
           python3 db_split.py ensure
 
+      - name: 🌐 Asegurar Cloudflare WARP y detectar salida (auto)
+        id: warp
+        env:
+          # Si definís la variable de repositorio LAANONIMA_PROXY, tiene prioridad.
+          # Si no, se autodetecta el proxy local de WARP en 127.0.0.1:40000.
+          REPO_PROXY: ${{ vars.LAANONIMA_PROXY }}
+        run: |
+          # 1) Best-effort: reconectar WARP si la Pi lo tiene (no rompe el job si no hay permisos).
+          if command -v warp-cli >/dev/null 2>&1; then
+            sudo -n warp-cli --accept-tos connect 2>/dev/null || warp-cli --accept-tos connect 2>/dev/null || true
+            sleep 3
+          fi
+
+          # 2) Determinar proxy: variable del repo > autodetección del proxy WARP local.
+          #    Si WARP está en modo túnel completo no hay proxy y el tráfico ya sale por Cloudflare.
+          proxy="$REPO_PROXY"
+          if [ -z "$proxy" ] && command -v curl >/dev/null 2>&1; then
+            if curl -s --max-time 8 -x http://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace | grep -q "warp=on"; then
+              proxy="http://127.0.0.1:40000"
+            fi
+          fi
+
+          if [ -n "$proxy" ]; then
+            echo "✅ La Anónima saldrá por proxy WARP: $proxy"
+          else
+            echo "::warning title=WARP no detectado::No hay proxy WARP operativo en 127.0.0.1:40000; se saldrá por la IP directa del host (riesgo de HTTP 403)."
+          fi
+          echo "proxy=$proxy" >> "$GITHUB_OUTPUT"
+
       - name: 🛒 Ejecutar Scraper de La Anónima (IP Residencial)
         id: laanonima_scraper
         env:
-          # Si está definida la variable de repositorio LAANONIMA_PROXY (p. ej. Cloudflare WARP
-          # en modo proxy: http://127.0.0.1:40000), el scraper sale por esa IP y evita el 403.
-          LAANONIMA_PROXY: ${{ vars.LAANONIMA_PROXY }}
+          LAANONIMA_PROXY: ${{ steps.warp.outputs.proxy }}
         run: |
           python3 scraper_laanonima.py
 
