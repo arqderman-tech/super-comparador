@@ -794,6 +794,22 @@ def main(quick_mode: bool = False):
                 current_status["message"] = "Aviso: Sin productos extraidos (posible bloqueo temporal). Se preservo la BD."
             return 0, 0
 
+        # Guardia anti-degradacion: si el WAF bloqueo una fraccion grande de subcategorias,
+        # el catalogo quedo muy incompleto (aunque haya entrado algun producto). Se aborta
+        # sin guardar, para no pisar datos buenos, y se marca el run como fallido (exit 3).
+        blocked_403 = _http_status_counts.get(403, 0)
+        if blocked_403 >= max(5, int(len(subcats) * 0.3)):
+            _last_run_blocked = True
+            msg = (
+                f"BLOQUEO PARCIAL DETECTADO: {blocked_403}/{len(subcats)} subcategorias "
+                f"respondieron HTTP 403 (WAF de CloudFront). Catalogo incompleto; se preserva la BD sin cambios."
+            )
+            log.error(msg)
+            print(f"::error title=La Anónima bloqueada (HTTP 403)::{msg}")
+            current_status["is_running"] = False
+            current_status["message"] = f"Bloqueo parcial HTTP 403 ({blocked_403}/{len(subcats)}). BD preservada."
+            return 0, 0
+
         # Deduplicar productos de catalogo por codigo
         seen_codes = set()
         unique_catalog_prods = []
