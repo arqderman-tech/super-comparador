@@ -38,24 +38,44 @@ jobs:
         run: |
           python3 db_split.py ensure
 
-      - name: 🌐 Asegurar Cloudflare WARP y detectar salida (auto)
+      - name: 🌐 Asegurar Cloudflare WARP (instalar + modo proxy + conectar)
         id: warp
         env:
           # Si definís la variable de repositorio LAANONIMA_PROXY, tiene prioridad.
-          # Si no, se autodetecta el proxy local de WARP en 127.0.0.1:40000.
           REPO_PROXY: ${{ vars.LAANONIMA_PROXY }}
         run: |
-          # 1) Best-effort: reconectar WARP si la Pi lo tiene (no rompe el job si no hay permisos).
-          if command -v warp-cli >/dev/null 2>&1; then
-            sudo -n warp-cli --accept-tos connect 2>/dev/null || warp-cli --accept-tos connect 2>/dev/null || true
-            sleep 3
+          # 1) Instalar Cloudflare WARP la primera vez (idempotente).
+          if ! command -v warp-cli >/dev/null 2>&1; then
+            echo "Cloudflare WARP no está instalado; instalando..."
+            CODENAME="$(. /etc/os-release 2>/dev/null; echo "${VERSION_CODENAME:-bookworm}")"
+            ARCH="$(dpkg --print-architecture)"
+            command -v gpg >/dev/null 2>&1 || sudo -n apt-get install -y -qq gnupg || true
+            if curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg \
+                 | sudo -n gpg --yes --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg \
+               && echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $CODENAME main" \
+                 | sudo -n tee /etc/apt/sources.list.d/cloudflare-client.list >/dev/null \
+               && sudo -n apt-get update -qq \
+               && sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq cloudflare-warp; then
+              echo "WARP instalado correctamente."
+            else
+              echo "::warning title=No se pudo instalar WARP::Fallo la instalación de cloudflare-warp; La Anónima saldrá por IP directa (HTTP 403)."
+            fi
           fi
 
-          # 2) Determinar proxy: variable del repo > autodetección del proxy WARP local.
-          #    Si WARP está en modo túnel completo no hay proxy y el tráfico ya sale por Cloudflare.
+          # 2) Registrar + modo proxy + conectar (idempotente, tolerante a fallos).
+          if command -v warp-cli >/dev/null 2>&1; then
+            sudo -n warp-cli --accept-tos registration new 2>/dev/null \
+              || sudo -n warp-cli --accept-tos register 2>/dev/null || true
+            sudo -n warp-cli --accept-tos mode proxy 2>/dev/null || true
+            sudo -n warp-cli --accept-tos connect 2>/dev/null || true
+            sleep 5
+            sudo -n warp-cli --accept-tos status 2>/dev/null || true
+          fi
+
+          # 3) Elegir salida: variable de repo > autodetección del proxy WARP local.
           proxy="$REPO_PROXY"
           if [ -z "$proxy" ] && command -v curl >/dev/null 2>&1; then
-            if curl -s --max-time 8 -x http://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace | grep -q "warp=on"; then
+            if curl -s --max-time 10 -x http://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace | grep -q "warp=on"; then
               proxy="http://127.0.0.1:40000"
             fi
           fi
@@ -63,7 +83,7 @@ jobs:
           if [ -n "$proxy" ]; then
             echo "✅ La Anónima saldrá por proxy WARP: $proxy"
           else
-            echo "::warning title=WARP no detectado::No hay proxy WARP operativo en 127.0.0.1:40000; se saldrá por la IP directa del host (riesgo de HTTP 403)."
+            echo "::warning title=WARP no operativo::No hay proxy WARP activo en 127.0.0.1:40000; se saldrá por la IP directa del host (riesgo de HTTP 403)."
           fi
           echo "proxy=$proxy" >> "$GITHUB_OUTPUT"
 
