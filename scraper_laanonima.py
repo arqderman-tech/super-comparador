@@ -105,6 +105,25 @@ def _register_http_status(status: int):
         _http_status_counts[status] = _http_status_counts.get(status, 0) + 1
 
 
+def _get_proxies():
+    """
+    Configuracion de proxy para las sesiones HTTP. Permite que La Anonima salga por
+    una IP no bloqueada por el WAF (ej. Cloudflare WARP en la Raspberry Pi) sin tocar
+    el codigo: se toma de LAANONIMA_PROXY o de las variables estandar HTTP(S)_PROXY.
+    Si no hay ninguna definida, no se usa proxy.
+    """
+    proxy = (
+        os.environ.get("LAANONIMA_PROXY")
+        or os.environ.get("HTTPS_PROXY")
+        or os.environ.get("https_proxy")
+        or os.environ.get("HTTP_PROXY")
+        or os.environ.get("http_proxy")
+    )
+    if not proxy:
+        return None
+    return {"http": proxy, "https": proxy}
+
+
 def get_session():
     """
     Obtiene una sesion HTTP configurada por hilo.
@@ -113,10 +132,11 @@ def get_session():
     soportada por la libreria instalada, prueba con versiones anteriores.
     """
     if not hasattr(_thread_local, "session") or _thread_local.session is None:
+        proxies = _get_proxies()
         if HAS_CURL_CFFI:
             for target in CURL_IMPERSONATE_TARGETS:
                 try:
-                    s = cffi_requests.Session(impersonate=target)
+                    s = cffi_requests.Session(impersonate=target, proxies=proxies)
                     s.headers.update(HEADERS)
                     s.cookies.update(COOKIES)
                     _thread_local.session = s
@@ -125,6 +145,8 @@ def get_session():
                     log.warning(f"Impersonacion curl_cffi '{target}' no disponible: {e}")
 
         s = requests.Session()
+        if proxies:
+            s.proxies.update(proxies)
         adapter = HTTPAdapter(
             pool_connections=20,
             pool_maxsize=20,
@@ -698,6 +720,12 @@ def main(quick_mode: bool = False):
     log.info("=" * 60)
 
     try:
+        proxies = _get_proxies()
+        if proxies:
+            log.info(f"Usando proxy para La Anonima: {proxies['https'].split('@')[-1]}")
+        else:
+            log.info("Sin proxy configurado: saliendo por la IP directa del host")
+
         session = get_session()
         warm_up_session(session)
 
