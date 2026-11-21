@@ -109,7 +109,19 @@ jobs:
             echo "::warning title=La Anónima sin cambios::No hubo cambios para commitear (catalogo identico al previo o sin datos nuevos)."
           else
             git commit -m "chore(auto): actualización diaria La Anónima desde Raspberry Pi [skip ci]"
-            git push
+            # Si main avanzó durante la corrida, el push simple se rechaza. Rebase + reintentos.
+            ok=0
+            for attempt in 1 2 3; do
+              if git pull --rebase --autostash --no-edit origin main && git push; then
+                ok=1; break
+              fi
+              git rebase --abort 2>/dev/null || true
+              sleep $((attempt * 5))
+            done
+            if [ "$ok" -ne 1 ]; then
+              echo "::error title=No se pudo subir La Anónima::main cambió durante la corrida y el push fue rechazado; se reintentará en la próxima ejecución."
+              exit 1
+            fi
           fi
 
   scrape-cloud-and-deploy:
@@ -169,7 +181,23 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add database.db.part* static/data/
-          git diff --staged --quiet || (git commit -m "chore(auto): actualización diaria de precios [skip ci]" && git push)
+          if git diff --staged --quiet; then
+            echo "Sin cambios para commitear."
+          else
+            git commit -m "chore(auto): actualización diaria de precios [skip ci]"
+            ok=0
+            for attempt in 1 2 3; do
+              if git pull --rebase --autostash --no-edit origin main && git push; then
+                ok=1; break
+              fi
+              git rebase --abort 2>/dev/null || true
+              sleep $((attempt * 5))
+            done
+            if [ "$ok" -ne 1 ]; then
+              echo "::error title=No se pudo subir los precios::main cambió durante la corrida y el push fue rechazado; se reintentará en la próxima ejecución."
+              exit 1
+            fi
+          fi
 
       - name: 🚀 Configurar GitHub Pages
         uses: actions/configure-pages@v4
